@@ -1,0 +1,73 @@
+diff --git a/packages/tui/src/components/loader.ts b/packages/tui/src/components/loader.ts
+index 9f93883..893322d 100644
+--- a/packages/tui/src/components/loader.ts
++++ b/packages/tui/src/components/loader.ts
+@@ -7,8 +7,19 @@ export interface LoaderIndicatorOptions {
+ 	intervalMs?: number;
+ }
+ 
+-const DEFAULT_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+-const DEFAULT_INTERVAL_MS = 80;
++const DEFAULT_FRAMES = [
++	"⠀⠀⠀⠀",
++	"⡇⠀⠀⠀",
++	"⣿⠀⠀⠀",
++	"⢸⡇⠀⠀",
++	"⠀⣿⠀⠀",
++	"⠀⢸⡇⠀",
++	"⠀⠀⣿⠀",
++	"⠀⠀⢸⡇",
++	"⠀⠀⠀⣿",
++	"⠀⠀⠀⢸",
++];
++const DEFAULT_INTERVAL_MS = 70;
+ 
+ /**
+  * Loader component that updates with an optional spinning animation.
+diff --git a/packages/coding-agent/src/modes/interactive/components/status-indicator.ts b/packages/coding-agent/src/modes/interactive/components/status-indicator.ts
+index 5de2fe9..4d1cb9d 100644
+--- a/packages/coding-agent/src/modes/interactive/components/status-indicator.ts
++++ b/packages/coding-agent/src/modes/interactive/components/status-indicator.ts
+@@ -6,6 +6,20 @@ import { keyText } from "./keybinding-hints.ts";
+ 
+ export type StatusIndicatorKind = "working" | "retry" | "compaction" | "branchSummary";
+ 
++const LINE_FRAMES = [
++	"⠀⠀⠀⠀",
++	"⠁⠁⠁⠁",
++	"⠂⠂⠂⠂",
++	"⠄⠄⠄⠄",
++	"⡀⡀⡀⡀",
++	"⠀⠀⠀⠀",
++	"⡀⡀⡀⡀",
++	"⠄⠄⠄⠄",
++	"⠂⠂⠂⠂",
++	"⠁⠁⠁⠁",
++];
++const REVERSED_PULSE_FRAMES = ["⠀⠀⠀", "⠀⠶⠀", "⠰⣿⠆", "⢾⣉⡷", "⣏⠀⣹", "⡁⠀⢈"];
++
+ export class StatusIndicator extends Loader {
+ 	readonly kind: StatusIndicatorKind;
+ 
+@@ -67,6 +81,10 @@ export class RetryStatusIndicator extends StatusIndicator {
+ 			(spinner) => theme.fg("warning", spinner),
+ 			(text) => theme.fg("muted", text),
+ 			retryMessage(Math.ceil(delayMs / 1000)),
++			{
++				frames: LINE_FRAMES.map((frame) => theme.fg("warning", frame)),
++				intervalMs: 70,
++			},
+ 		);
+ 		this.countdown = new CountdownTimer(
+ 			delayMs,
+@@ -104,6 +122,10 @@ export class CompactionStatusIndicator extends StatusIndicator {
+ 			(spinner) => theme.fg("accent", spinner),
+ 			(text) => theme.fg("muted", text),
+ 			label,
++			{
++				frames: REVERSED_PULSE_FRAMES.map((frame) => theme.fg("accent", frame)),
++				intervalMs: 180,
++			},
+ 		);
+ 	}
+ }

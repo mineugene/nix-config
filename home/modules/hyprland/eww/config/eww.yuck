@@ -1,0 +1,88 @@
+(include "./popups/common.yuck")
+(include "./popups/audio.yuck")
+(include "./popups/calendar.yuck")
+(include "./popups/hardware.yuck")
+(include "./popups/menu.yuck")
+(include "./popups/network.yuck")
+(include "./popups/profile.yuck")
+
+;; Structural primitives. Modules compose these instead of raw boxes so that
+;; spacing, expansion, and pill geometry stay defined in exactly one place.
+
+(defwidget bar-section [class halign]
+  (box
+    :class `bar-section ${class}`
+    :orientation "horizontal"
+    :space-evenly false
+    :hexpand false
+    :vexpand false
+    :halign {halign}
+    :valign "center"
+    :spacing @spacingSmall@
+    (children)))
+
+;; A lighter pill drawn on top of its darker parent, full height and rounded at
+;; both ends. The parent extends past it, and the controls on that extended
+;; surface read as secondary. The extension itself is never a container: it is
+;; simply the parent pill showing past this group's rounded cap.
+(defwidget bar-group [class]
+  (box
+    :class `bar-group ${class}`
+    :orientation "horizontal"
+    :space-evenly false
+    :hexpand false
+    :vexpand false
+    :valign "center"
+    :spacing @spacingSmall@
+    (children)))
+
+(defwidget bar-pill [class]
+  (box
+    :class `island ${class}`
+    :orientation "horizontal"
+    :space-evenly false
+    :hexpand false
+    :vexpand false
+    :valign "center"
+    :spacing @spacingSmall@
+    (children)))
+
+;; Which popup is open. A control reads it to drop its own tooltip while its
+;; menu is showing, since the tooltip would otherwise cover the first entry.
+(defvar open_popup "")
+
+(defwidget bar-cell [class]
+  (box
+    :class `bar-cell ${class}`
+    :hexpand false
+    :vexpand false
+    :halign "center"
+    :valign "center"
+    (children)))
+
+(defwidget bar-icon [icon ?nudge]
+  (bar-cell
+    :class "bar-icon-cell"
+    (label
+      :class `bar-icon nudge-${nudge ?: ""}`
+      :hexpand false
+      :vexpand false
+      :halign "center"
+      :valign "center"
+      :xalign 0
+      :yalign 0.5
+      :text {icon})))
+
+(include "./modules/audio.yuck")
+(include "./modules/bluetooth.yuck")
+(include "./modules/clock.yuck")
+(include "./modules/hardware.yuck")
+(include "./modules/menu.yuck")
+(include "./modules/network.yuck")
+(include "./modules/notifications.yuck")
+(include "./modules/profile.yuck")
+(include "./modules/theme.yuck")
+(include "./modules/tray.yuck")
+(include "./modules/workspaces.yuck")
+(include "./modules/window.yuck")
+(include "./bar.yuck")

@@ -1,0 +1,78 @@
+(defwidget bar-content []
+  (centerbox
+    :class `bar-layout ${theme_mode}`
+    :orientation "horizontal"
+    (bar-section
+      :class "bar-left"
+      :halign "start"
+      (menu)
+      (workspaces)
+      (active-window))
+    (bar-section
+      :class "bar-center"
+      :halign "center"
+      (clock))
+    (bar-section
+      :class "bar-right"
+      :halign "end"
+      (hardware)
+      (bar-pill
+        :class "connection-island"
+        (bar-group
+          :class "connection-primary"
+          (wifi)
+          (bluetooth)
+          (ethernet)
+          (audio)
+          (microphone))
+        (theme)
+        (notifications))
+      (profile))))
+
+(defwindow bar
+  :monitor 0
+  :geometry (geometry
+    :x "0px"
+    :y "0px"
+    :width "100%"
+    :height "@barHeight@px"
+    :anchor "top center")
+  :stacking "fg"
+  :exclusive true
+  :focusable "none"
+  :namespace "eww-bar"
+  (bar-content))
+
+;; The secondary bar carries per-screen context only. Hardware, network, sound,
+;; theme and session controls are machine-wide, so duplicating them would show
+;; the same values twice rather than telling you anything about this monitor.
+(defwidget bar-content-secondary []
+  (centerbox
+    :class `bar-layout ${theme_mode}`
+    :orientation "horizontal"
+    (bar-section
+      :class "bar-left"
+      :halign "start"
+      (workspaces)
+      (active-window))
+    (bar-section
+      :class "bar-center"
+      :halign "center"
+      (clock))
+    (bar-section
+      :class "bar-right"
+      :halign "end")))
+
+(defwindow bar-secondary
+  :monitor 1
+  :geometry (geometry
+    :x "0px"
+    :y "0px"
+    :width "100%"
+    :height "@barHeight@px"
+    :anchor "top center")
+  :stacking "fg"
+  :exclusive true
+  :focusable "none"
+  :namespace "eww-bar"
+  (bar-content-secondary))

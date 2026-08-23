@@ -1,0 +1,36 @@
+/* Generated from mine.desktop.theme. Use semantic colors instead of raw palette values. */
+* {
+    background: @background@;
+    surface: @surface@;
+    surface-alt: @surfaceAlt@;
+    surface-hover: @surfaceHover@;
+    foreground: @foreground@;
+    muted: @muted@;
+    accent: @accent@;
+    accent-alt: @accentAlt@;
+    red: @red@;
+    yellow: @yellow@;
+    green: @green@;
+    cyan: @cyan@;
+    border: @border@;
+
+    font-interface-family: "@interfaceFontFamily@";
+    font-interface-size: @interfaceFontSize@px;
+    font-monospace-family: "@monospaceFontFamily@";
+
+    radius-small: @radiusSmall@px;
+    radius-card: @radiusCard@px;
+    radius-pill: @radiusPill@px;
+    border-width: @borderWidth@px;
+
+    spacing-small: @spacingSmall@px;
+    spacing-normal: @spacingNormal@px;
+    spacing-large: @spacingLarge@px;
+    bar-height: @barHeight@px;
+    bar-outer-margin: @barOuterMargin@px;
+    popup-padding: @popupPadding@px;
+
+    animation-fast-ms: @animationFast@;
+    animation-normal-ms: @animationNormal@;
+    animation-slow-ms: @animationSlow@;
+}

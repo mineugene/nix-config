@@ -1,0 +1,16 @@
+color:
+    when: auto
+    theme: custom
+blocks:
+    - permission
+    - user
+    - group
+    - date
+    - size
+    - name
+size: short
+sorting:
+    dir-grouping: first
+symlink-arrow: false
+icons:
+    when: never

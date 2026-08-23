@@ -1,0 +1,98 @@
+diff --git a/packages/coding-agent/src/modes/interactive/components/model-selector.ts b/packages/coding-agent/src/modes/interactive/components/model-selector.ts
+index c8489c8..2da2ef4 100644
+--- a/packages/coding-agent/src/modes/interactive/components/model-selector.ts
++++ b/packages/coding-agent/src/modes/interactive/components/model-selector.ts
+@@ -323,7 +323,7 @@ export class ModelSelectorComponent extends Container implements Focusable {
+ 			const defaultBadge = isDefault ? theme.fg("muted", " · default") : "";
+ 
+ 			const cursor = isSelected ? theme.fg("accent", "→ ") : "  ";
+-			const currentMarker = isCurrent ? theme.fg("accent", "✓ ") : "  ";
++			const currentMarker = isCurrent ? theme.fg("accent", "\u{f058}  ") : "   ";
+ 			const modelText = isSelected ? theme.fg("accent", item.id) : item.id;
+ 			const providerBadge = theme.fg("muted", `[${item.provider}]`);
+ 			const line = `${cursor}${currentMarker}${modelText} ${providerBadge}${defaultBadge}`;
+diff --git a/packages/coding-agent/src/modes/interactive/components/oauth-selector.ts b/packages/coding-agent/src/modes/interactive/components/oauth-selector.ts
+index d599168..6160c80 100644
+--- a/packages/coding-agent/src/modes/interactive/components/oauth-selector.ts
++++ b/packages/coding-agent/src/modes/interactive/components/oauth-selector.ts
+@@ -172,12 +172,12 @@ export class OAuthSelectorComponent extends Container implements Focusable {
+ 			provider.status.source === "OAuth" ||
+ 			provider.status.source === "stored credential"
+ 		) {
+-			return theme.fg("success", " ✓ configured");
++			return theme.fg("success", " \u{f058}  configured");
+ 		}
+ 		const source = /^[A-Z][A-Z0-9_]*(?:, [A-Z][A-Z0-9_]*)*$/.test(provider.status.source)
+ 			? `env: ${provider.status.source}`
+ 			: provider.status.source;
+-		return theme.fg("success", ` ✓ ${source}`);
++		return theme.fg("success", ` \u{f058}  ${source}`);
+ 	}
+ 
+ 	handleInput(keyData: string): void {
+diff --git a/packages/coding-agent/src/modes/interactive/components/scoped-models-selector.ts b/packages/coding-agent/src/modes/interactive/components/scoped-models-selector.ts
+index 89c486d..9975ae4 100644
+--- a/packages/coding-agent/src/modes/interactive/components/scoped-models-selector.ts
++++ b/packages/coding-agent/src/modes/interactive/components/scoped-models-selector.ts
+@@ -253,7 +253,7 @@ export class ScopedModelsSelectorComponent extends Container implements Focusabl
+ 			const styledId = item.model ? id : theme.strikethrough(id);
+ 			const modelText = isSelected ? theme.fg("accent", styledId) : styledId;
+ 			const providerBadge = theme.fg("muted", item.model ? ` [${item.model.provider}]` : " [unavailable]");
+-			const status = item.model && item.enabled ? theme.fg("accent", "✓ ") : "  ";
++			const status = item.model && item.enabled ? theme.fg("accent", "\u{f058}  ") : "   ";
+ 			this.listContainer.addChild(new Text(`${prefix}${status}${modelText}${providerBadge}`, 0, 0));
+ 		}
+ 
+diff --git a/packages/coding-agent/src/modes/interactive/components/trust-selector.ts b/packages/coding-agent/src/modes/interactive/components/trust-selector.ts
+index 00bc9e0..8a89044 100644
+--- a/packages/coding-agent/src/modes/interactive/components/trust-selector.ts
++++ b/packages/coding-agent/src/modes/interactive/components/trust-selector.ts
+@@ -107,7 +107,7 @@ export class TrustSelectorComponent extends Container {
+ 
+ 			const isSelected = i === this.selectedIndex;
+ 			const isCurrent = this.isSavedOption(option);
+-			const currentMarker = isCurrent ? theme.fg("accent", "✓ ") : "  ";
++			const currentMarker = isCurrent ? theme.fg("accent", "\u{f058}  ") : "   ";
+ 			const prefix = isSelected ? theme.fg("accent", "→ ") : "  ";
+ 			const label = isSelected ? theme.fg("accent", option.label) : theme.fg("text", option.label);
+ 			this.listContainer.addChild(new Text(`${prefix}${currentMarker}${label}`, 1, 0));
+diff --git a/packages/coding-agent/src/modes/interactive/interactive-mode.ts b/packages/coding-agent/src/modes/interactive/interactive-mode.ts
+index 8db1b80..0277fa5 100644
+--- a/packages/coding-agent/src/modes/interactive/interactive-mode.ts
++++ b/packages/coding-agent/src/modes/interactive/interactive-mode.ts
+@@ -1611,7 +1611,7 @@ export class InteractiveMode {
+ 			lines.push(
+ 				theme.fg(
+ 					"dim",
+-					`    ${theme.fg("success", "✓")} ${this.formatPathWithSource(first.winnerPath, this.findSourceInfoForPath(first.winnerPath, sourceInfos))}`,
++					`    ${theme.fg("success", "\u{f058}")}  ${this.formatPathWithSource(first.winnerPath, this.findSourceInfoForPath(first.winnerPath, sourceInfos))}`,
+ 				),
+ 			);
+ 			for (const d of collisionList) {
+@@ -4381,7 +4381,7 @@ export class InteractiveMode {
+ 				this.pendingMessagesContainer.addChild(new TruncatedText(text, 1, 0));
+ 			}
+ 			const dequeueHint = this.getAppKeyDisplay("app.message.dequeue");
+-			const hintText = theme.fg("dim", `↳ ${dequeueHint} to edit all queued messages`);
++			const hintText = theme.fg("dim", `\u{f17a9}  ${dequeueHint} to edit all queued messages`);
+ 			this.pendingMessagesContainer.addChild(new TruncatedText(hintText, 1, 0));
+ 		}
+ 	}
+@@ -6409,7 +6409,7 @@ export class InteractiveMode {
+ 				return;
+ 			}
+ 			this.chatContainer.addChild(new Spacer(1));
+-			this.chatContainer.addChild(new Text(`${theme.fg("accent", "✓ New session started")}`, 1, 1));
++			this.chatContainer.addChild(new Text(`${theme.fg("accent", "\u{f058}  New session started")}`, 1, 1));
+ 			this.ui.requestRender();
+ 		} catch (error: unknown) {
+ 			await this.handleFatalRuntimeError("Failed to create session", error);
+@@ -6444,7 +6444,7 @@ export class InteractiveMode {
+ 
+ 		this.chatContainer.addChild(new Spacer(1));
+ 		this.chatContainer.addChild(
+-			new Text(`${theme.fg("accent", "✓ Debug log written")}\n${theme.fg("muted", debugLogPath)}`, 1, 1),
++			new Text(`${theme.fg("accent", "\u{f058}  Debug log written")}\n${theme.fg("muted", debugLogPath)}`, 1, 1),
+ 		);
+ 		this.ui.requestRender();
+ 	}

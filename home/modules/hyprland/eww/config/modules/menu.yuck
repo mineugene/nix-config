@@ -1,0 +1,6 @@
+(defwidget menu []
+  (button
+    :class "menu"
+    :onclick "@popupToggle@ menu"
+    :tooltip {open_popup == "menu" ? "" : "Open desktop menu"}
+    (bar-icon :icon "")))

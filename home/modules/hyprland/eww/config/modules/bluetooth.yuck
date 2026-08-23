@@ -1,0 +1,20 @@
+(defpoll bluetooth_state
+  :interval "2s"
+  :initial `{"available":false,"powered":false,"connected":false,"audio":false}`
+  `@bluetooth@ status`)
+
+(defwidget bluetooth []
+  (eventbox
+    :class `bluetooth ${bluetooth_state.powered ? "enabled" : "disabled"}`
+    :visible {bluetooth_state.available}
+    :cursor "pointer"
+    :tooltip {!bluetooth_state.powered ? "Bluetooth off · click to turn on"
+      : bluetooth_state.connected ? "Bluetooth connected · click to turn off"
+        : "Bluetooth on · click to turn off"}
+    :onclick "@bluetooth@ toggle"
+    ;; The adapter is present either way, so an off radio keeps its control and
+    ;; says it is off; hiding it would remove the only way to switch it back on.
+    (bar-icon :icon {!bluetooth_state.powered ? "󰂲"
+      : bluetooth_state.audio ? "󰂰"
+        : bluetooth_state.connected ? "󰂱"
+          : "󰂯"})))

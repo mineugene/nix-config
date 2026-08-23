@@ -1,0 +1,36 @@
+/* Generated from mine.desktop.theme. */
+* {
+    background: @background@;
+    surface: @surface@;
+    surface-translucent: @surfaceTranslucent@;
+    surface-alt: @surfaceAlt@;
+    surface-hover: @surfaceHover@;
+    foreground: @foreground@;
+    muted: @muted@;
+    accent: @accent@;
+    accent-alt: @accentAlt@;
+    red: @red@;
+    yellow: @yellow@;
+    green: @green@;
+    cyan: @cyan@;
+    border: @border@;
+
+    font-interface: "@interfaceFontFamily@ @interfaceFontSize@";
+    font-interface-small: "@interfaceFontFamily@ @interfaceFontSizeSmall@";
+    font-monospace: "@monospaceFontFamily@ @interfaceFontSize@";
+
+    radius-small: @radiusSmall@px;
+    radius-card: @radiusCard@px;
+    radius-pill: @radiusPill@px;
+    border-width: @borderWidth@px;
+
+    spacing-small: @spacingSmall@px;
+    spacing-normal: @spacingNormal@px;
+    spacing-large: @spacingLarge@px;
+
+    /* rofi cannot build a two-value padding out of two variables, so the
+       pairs are named here rather than composed at each use. A row is padded
+       one step in from its own text; a window takes the terminal's inset. */
+    padding-row: @spacingSmall@px @spacingNormal@px;
+    padding-window: @spacingNormal@px @spacingLarge@px;
+}

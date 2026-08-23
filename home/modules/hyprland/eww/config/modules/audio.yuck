@@ -1,0 +1,65 @@
+(defvar audio_volume_visible false)
+
+(defpoll audio_status
+  :interval "2s"
+  :initial `@audioInitial@`
+  `@audio@ status`)
+
+(defwidget audio []
+  (eventbox
+    :class `audio ${audio_status.available ? "" : "unavailable"} ${audio_status.sink.muted ? "muted" : ""}`
+    :cursor "pointer"
+    :tooltip {open_popup == "audio" ? "" : !audio_status.available ? "Audio status unavailable"
+      : audio_status.sink.muted ? "Output muted"
+      : "Output ${audio_status.sink.volume}% · ${audio_status.sink.description}"}
+    :onclick "@popupToggle@ audio"
+    :onmiddleclick "@audio@ toggle-sink"
+    :onscroll "@audio@ change-sink {}"
+    ;; No spacing here: a collapsed revealer must not widen the pill and
+    ;; distort its end cap. The revealed label carries its own margin.
+    (box
+      :orientation "horizontal"
+      :space-evenly false
+      (circular-progress
+        :class "audio-meter"
+        :value {audio_status.sink.volume}
+        :thickness 3
+        :start-at 75
+        :clockwise true
+        (bar-icon :icon {!audio_status.available ? ""
+          : audio_status.sink.muted || audio_status.sink.volume == 0 ? ""
+          : audio_status.sink.volume < 20 ? ""
+          : audio_status.sink.volume < 60 ? ""
+          : ""}))
+      (revealer
+        :reveal {audio_volume_visible}
+        :transition "slideleft"
+        :duration "300ms"
+        (label
+          :class "audio-volume"
+          :visible {audio_status.available}
+          :text `${audio_status.sink.volume}%`)))))
+
+;; The microphone is an alarm, not a setting: it says something only while an
+;; application is listening or while you have muted it, so it takes a cell in
+;; the pill on those occasions and none at all otherwise. Its level stays in
+;; the popup, where a value you change occasionally belongs.
+(defwidget microphone []
+  (eventbox
+    :class `microphone ${audio_status.source.muted ? "muted" : "listening"}`
+    :visible {audio_status.source.active || audio_status.source.muted}
+    :cursor "pointer"
+    :tooltip {open_popup == "audio" ? "" : audio_status.source.muted ? "Microphone muted · middle-click to unmute"
+      : "Microphone in use by ${arraylength(audio_status.source.clients) > 0
+        ? audio_status.source.clients[0]
+        : "an application"} · middle-click to mute"}
+    :onclick "@popupToggle@ audio"
+    :onmiddleclick "@audio@ toggle-source"
+    (overlay
+      (circular-progress
+        :class "audio-meter"
+        :value {audio_status.source.volume}
+        :thickness 3
+        :start-at 75
+        :clockwise true
+        (bar-icon :icon {audio_status.source.muted ? "󰍭" : "󰍬"} :nudge "microphone")))))

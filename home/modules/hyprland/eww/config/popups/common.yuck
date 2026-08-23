@@ -1,0 +1,53 @@
+(defwidget popup-frame [kind]
+  (box
+    :class "popup ${kind} ${theme_mode}"
+    :orientation "vertical"
+    :space-evenly false
+    (children)))
+
+;; One row shape for every dropdown entry, so menus stay visually identical.
+(defwidget popup-action [action]
+  (button
+    :class "menu-action"
+    :onclick {action}
+    (children)))
+
+;; Covers the usable area, which already excludes the bar's exclusive zone.
+;; Popups map after it, so they stay on top while any click on the desktop
+;; dismisses them. It never takes keyboard focus, which keeps bar buttons
+;; clickable without moving the pointer first.
+(defwindow popup-backdrop
+  :monitor 0
+  :geometry (geometry
+    :x "0px"
+    :y "0px"
+    :width "100%"
+    :height "100%"
+    :anchor "top center")
+  :stacking "overlay"
+  :exclusive false
+  :focusable "none"
+  :namespace "eww-popup-backdrop"
+  (eventbox
+    :onclick "@popupToggle@ close-all"
+    :onrightclick "@popupToggle@ close-all"
+    :onmiddleclick "@popupToggle@ close-all"
+    (box :class "popup-backdrop")))
+
+(defwindow popup-backdrop-secondary
+  :monitor 1
+  :geometry (geometry
+    :x "0px"
+    :y "0px"
+    :width "100%"
+    :height "100%"
+    :anchor "top center")
+  :stacking "overlay"
+  :exclusive false
+  :focusable "none"
+  :namespace "eww-popup-backdrop"
+  (eventbox
+    :onclick "@popupToggle@ close-all"
+    :onrightclick "@popupToggle@ close-all"
+    :onmiddleclick "@popupToggle@ close-all"
+    (box :class "popup-backdrop")))

@@ -1,0 +1,6 @@
+(defwidget profile []
+  (button
+    :class "profile"
+    :onclick "@popupToggle@ profile"
+    :tooltip {open_popup == "profile" ? "" : "@username@"}
+    (bar-icon :icon "")))
