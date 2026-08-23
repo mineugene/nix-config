@@ -1,0 +1,12 @@
+local selected
+selected=$(git log --oneline --color=always \
+    --format="%C(auto)%h %s %C(black)%C(bold)%cr" |
+    fzf --ansi --no-multi --no-sort --reverse --tiebreak=index \
+        --preview 'echo {} | grep -o "[a-f0-9]\{7,\}" | head -1 | xargs git show --color=always' \
+        --preview-window 'right:60%' \
+        --header 'enter: insert commit hash into buffer') &&
+if [ -n "$selected" ]; then
+    local hash=$(echo "$selected" | grep -o '[a-f0-9]\{7,\}' | head -1)
+    LBUFFER+="$hash"
+fi
+[[ -n "$WIDGET" ]] && zle reset-prompt

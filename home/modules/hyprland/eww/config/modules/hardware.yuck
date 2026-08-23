@@ -1,0 +1,69 @@
+(deflisten hardware_status
+  :initial `@hardwareInitial@`
+  `@hardwareStatus@`)
+
+;; Every ring reports a reading in its own units against its own range, so the
+;; arc and the alert colour are derived here rather than at each call site. A
+;; reading outside the range clamps to a full or empty arc instead of drawing
+;; past the ring or inverting it.
+(defwidget hardware-ring [icon reading minimum maximum warning critical ?nudge]
+  (circular-progress
+    :class {(reading ?: -1) < 0 ? "hardware-meter unavailable"
+      : reading >= critical ? "hardware-meter critical"
+        : reading >= warning ? "hardware-meter warning"
+          : "hardware-meter"}
+    :value {(reading ?: minimum) <= minimum ? 0
+      : reading >= maximum ? 100
+        : (reading - minimum) * 100 / (maximum - minimum)}
+    :thickness 3
+    :start-at 75
+    :clockwise true
+    (bar-icon :icon {icon} :nudge {nudge})))
+
+(defwidget hardware []
+  (button
+    :class "island hardware"
+    :onclick "@popupToggle@ hardware"
+    :tooltip {open_popup == "hardware" ? "" : "Open hardware dashboard"}
+    (box
+      :orientation "horizontal"
+      :space-evenly false
+      :spacing @spacingSmall@
+      ;; The rings are reset to plain geometric centring while their offsets
+      ;; are re-evaluated, so each names itself with an empty nudge: claimed
+      ;; out of the module mean, but carrying no measured rule of its own.
+      (hardware-ring
+        :nudge ""
+        :icon ""
+        :reading {hardware_status.cpu.usage}
+        :minimum 0
+        :maximum 100
+        :warning 60
+        :critical 85)
+      (hardware-ring
+        :nudge ""
+        :icon "󰾲"
+        :reading {hardware_status.gpu.usage}
+        :minimum 0
+        :maximum 100
+        :warning 60
+        :critical 85)
+      (hardware-ring
+        :nudge ""
+        :icon ""
+        :reading {hardware_status.memory.usage}
+        :minimum 0
+        :maximum 100
+        :warning 60
+        :critical 85)
+      ;; Temperature starts at 20C rather than zero: a room-temperature
+      ;; idle would otherwise sit a fifth of the way round the ring and
+      ;; never read as empty.
+      (hardware-ring
+        :nudge ""
+        :icon "󰈐"
+        :reading {hardware_status.cpu.temp_c}
+        :minimum 20
+        :maximum 96
+        :warning 60
+        :critical 80))))

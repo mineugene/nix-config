@@ -1,0 +1,96 @@
+* {
+    font: @font-interface-small;
+    text-color: @foreground;
+    background-color: transparent;
+}
+
+window {
+    transparency: "real";
+    background-color: @surface-translucent;
+    border: @border-width;
+    border-color: @border;
+    border-radius: @radius-card;
+    location: north;
+    anchor: north;
+    y-offset: 40%;
+    /* A width in characters is a measure of the text the list holds, so it
+       does not need a breakpoint per monitor to stay readable. */
+    width: 56ch;
+}
+
+mainbox {
+    /* The terminal's own window padding, so a floating window of text keeps
+       the same inset whichever program drew it. */
+    padding: @padding-window;
+    spacing: @spacing-small;
+    children: [ inputbar, message, listview ];
+}
+
+inputbar {
+    padding: @padding-row;
+    spacing: @spacing-small;
+    border: @border-width;
+    border-color: @border;
+    /* The search field is a field inside a window, not a bar control, so it
+       follows the window's corners rather than the bar's pill shape. */
+    border-radius: @radius-card;
+    children: [ prompt, entry ];
+}
+
+prompt {
+    /* An icon glyph paints wider than the advance width rofi measures it by,
+       so without room on the right the search icon is clipped. Half an em
+       keeps the allowance tied to the font rather than to a pixel count. */
+    padding: 0 0.5em 0 0;
+    text-color: @accent;
+}
+
+entry {
+    placeholder: "Type to search";
+    placeholder-color: @muted;
+}
+
+message {
+    padding: @padding-row;
+    border-radius: @radius-card;
+}
+
+textbox {
+    text-color: @foreground;
+}
+
+listview {
+    /* A list is one surface. Rows are separated by their own padding, and a
+       gap on top of that reads as a stack of cards. */
+    spacing: 0;
+    scrollbar: false;
+    fixed-height: false;
+}
+
+/* One step in from the row's own text on each axis, as the bar's dropdown
+   rows are: taking the normal step on both doubled the row height against a
+   13px font and left the list reading as separate cards. */
+element {
+    padding: @padding-row;
+    spacing: @spacing-small;
+    border-radius: @radius-card;
+}
+
+/* The same highlight the bar's dropdown rows use under the pointer. A menu
+   should not change colour language between the bar and the launcher. */
+element selected {
+    background-color: @surface-hover;
+    text-color: @foreground;
+}
+
+element-text {
+    background-color: inherit;
+    text-color: inherit;
+    vertical-align: 0.5;
+}
+
+element-icon {
+    /* The bar draws its icons at 16px against the same 13px interface font. */
+    size: 1.2em;
+    vertical-align: 0.5;
+}

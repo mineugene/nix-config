@@ -1,0 +1,5 @@
+if [[ -n "$BUFFER" ]]; then
+  zle delete-char
+else
+  zle send-break
+fi

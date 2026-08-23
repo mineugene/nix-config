@@ -1,0 +1,26 @@
+(deflisten hyprland_state
+  :initial `@hyprlandInitial@`
+  `@hyprlandListener@`)
+
+;; Occupied workspaces sit shoulder to shoulder so their backgrounds merge into
+;; one group. The listener marks each run's first and last workspace, and the
+;; stylesheet rounds only those outer edges.
+(defwidget workspaces []
+  (bar-pill
+    :class "workspaces"
+    (box
+      :class "workspace-run"
+      :orientation "horizontal"
+      :space-evenly false
+      (for workspace in {hyprland_state.workspaces}
+        (button
+          :class "workspace"
+          :onclick "@workspaceCommand@ ${workspace.id}"
+          (bar-cell :class "workspace-label ${workspace.classes}"
+            (label
+              :class "workspace-number"
+              :halign "center"
+              :valign "center"
+              :xalign 0.5
+              :yalign 0.5
+              :text {workspace.id})))))))

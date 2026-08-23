@@ -1,0 +1,135 @@
+local widget_path="$HOME/.config/zsh/widgets/tmux-session-switcher"
+
+list_choices() {
+    local mode=${1:-recent} activity session_name dir windows
+    local -A session_dirs
+
+    while IFS=$'\t' read -r activity session_name dir windows; do
+        [[ -n "$session_name" ]] || continue
+        dir=${dir%/}
+        session_dirs[$dir]=1
+        printf 'session\t%s\t%s\tSESSION  %s  ·  %s windows  ·  %s\n' \
+            "$session_name" "$dir" "$session_name" "$windows" "$dir"
+    done < <(tmux list-sessions -F $'#{session_activity}\t#{session_name}\t#{session_path}\t#{session_windows}' 2>/dev/null | sort -rn)
+
+    if [[ "$mode" == all ]]; then
+        while IFS= read -r dir; do
+            dir=${dir%/}
+            [[ -n "$dir" && -z "${session_dirs[$dir]}" ]] || continue
+            printf 'directory\t\t%s\tDIR      %s\n' "$dir" "$dir"
+        done < <(command fd --type directory --max-depth 3 --hidden . "$HOME")
+    else
+        while IFS= read -r dir; do
+            dir=${dir%/}
+            [[ -n "$dir" && -z "${session_dirs[$dir]}" ]] || continue
+            printf 'directory\t\t%s\tDIR      %s\n' "$dir" "$dir"
+        done < <(zoxide query --list 2>/dev/null)
+    fi
+}
+
+preview_choice() {
+    local type=$1 session_name=$2 dir=$3
+
+    if [[ "$type" == session ]]; then
+        printf '\033[1;36m%s\033[0m  %s\n\n' "$session_name" "$dir"
+        tmux list-windows -t "$session_name" \
+            -F '#{?window_active,>, } #{window_index}: #{window_name} (#{window_panes} panes)' 2>/dev/null
+        printf '\n--- panes ---\n'
+        tmux list-panes -t "$session_name" -a -F \
+            '#{window_index}.#{pane_index} #{?pane_active,*, } #{pane_current_command}  #{pane_current_path}' 2>/dev/null
+    else
+        printf '\033[1;36m%s\033[0m\n\n' "$dir"
+        lsd --tree --depth=2 --color=always -- "$dir" 2>/dev/null || ls -la -- "$dir"
+    fi
+}
+
+kill_session() {
+    local type=$1 session_name=$2 err
+
+    if [[ "$type" != session ]]; then
+        printf '\033[1;33mnothing to kill\033[0m — directory entries are not running sessions\n'
+        read -sk1 '?press any key to return'
+        return
+    fi
+    if err=$(tmux kill-session -t "$session_name" 2>&1); then
+        return
+    fi
+    printf '\033[1;31mkill failed\033[0m — %s\n' "$err"
+    read -sk1 '?press any key to return'
+}
+
+case ${1:-} in
+    --list)
+        list_choices "${2:-recent}"
+        return
+        ;;
+    --preview)
+        preview_choice "$2" "$3" "$4"
+        return
+        ;;
+    --kill)
+        kill_session "$2" "$3"
+        return
+        ;;
+esac
+
+local selected key choice type session_name dir git_root
+
+selected=$(
+    list_choices recent | fzf --no-multi \
+        --no-height \
+        --delimiter=$'\t' \
+        --with-nth=4 \
+        --header 'enter: switch/attach | alt-enter: new session | ctrl-a: all dirs | ctrl-x: kill' \
+        --color header:italic \
+        --expect=alt-enter \
+        --preview "zsh ${(q)widget_path} --preview '{1}' '{2}' '{3}'" \
+        --preview-window 'right:50%' \
+        --bind 'ctrl-/:change-preview-window(down|hidden|)' \
+        --bind "ctrl-a:reload(zsh ${(q)widget_path} --list all)+change-header(enter: switch/attach | alt-enter: new session | ctrl-z: zoxide dirs | ctrl-x: kill)" \
+        --bind "ctrl-z:reload(zsh ${(q)widget_path} --list recent)+change-header(enter: switch/attach | alt-enter: new session | ctrl-a: all dirs | ctrl-x: kill)" \
+        --bind "ctrl-x:execute(zsh ${(q)widget_path} --kill {1} '{2}')+reload(zsh ${(q)widget_path} --list recent)+change-header(enter: switch/attach | alt-enter: new session | ctrl-a: all dirs | ctrl-x: kill)"
+)
+
+[[ -z "$selected" ]] && { [[ -n "$WIDGET" ]] && zle reset-prompt; return; }
+
+key=$(echo "$selected" | head -1)
+choice=$(echo "$selected" | tail -1)
+IFS=$'\t' read -r type session_name dir _ <<< "$choice"
+
+if [[ "$type" == directory ]]; then
+    git_root=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null)
+    if [[ -n "$git_root" ]]; then
+        session_name="${git_root:t}"
+        dir="$git_root"
+    else
+        session_name="${dir:t}"
+    fi
+    session_name="${session_name//[.:]/_}"
+fi
+
+if [[ "$key" == alt-enter ]]; then
+    local n=1
+    while tmux has-session -t "${session_name}-${n}" 2>/dev/null; do
+        ((n++))
+    done
+    session_name="${session_name}-${n}"
+    tmux new-session -d -s "$session_name" -c "$dir"
+fi
+
+if tmux has-session -t "$session_name" 2>/dev/null; then
+    if [[ -n "$TMUX" ]]; then
+        tmux switch-client -t "$session_name"
+    else
+        tmux attach-session -t "$session_name"
+    fi
+else
+    tmux new-session -d -s "$session_name" -c "$dir"
+    if [[ -n "$TMUX" ]]; then
+        tmux switch-client -t "$session_name"
+    else
+        tmux attach-session -t "$session_name"
+    fi
+fi
+
+[[ -n "$WIDGET" ]] && zle reset-prompt

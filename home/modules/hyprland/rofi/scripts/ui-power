@@ -1,0 +1,134 @@
+#!/bin/sh
+set -u
+
+if [ "$#" -gt 2 ]; then
+    printf 'usage: ui-power [ACTION | can hibernate]\n' >&2
+    exit 2
+fi
+
+config_home=${XDG_CONFIG_HOME:-${HOME:?HOME must be set}/.config}
+confirm=${UI_CONFIRM:-@confirm@}
+desktop_theme=${UI_DESKTOP_THEME:-@desktopTheme@}
+lock=${UI_LOCK:-@lock@}
+rofi=${UI_ROFI:-@rofi@}
+busctl=${UI_BUSCTL:-@busctl@}
+systemctl=${UI_SYSTEMCTL:-@systemctl@}
+uwsm=${UI_UWSM:-@uwsm@}
+# logind is the authority on hibernation: it needs a resume device and enough
+# swap as well as kernel support, and it is the component that checks all
+# three before agreeing to try. "challenge" means allowed after authentication,
+# which the session can still complete.
+capability() {
+    answer=$("$busctl" --system call \
+        org.freedesktop.login1 \
+        /org/freedesktop/login1 \
+        org.freedesktop.login1.Manager \
+        "$1" 2>/dev/null) || answer=''
+
+    case $answer in
+        *'"yes"'* | *'"challenge"'*) printf true ;;
+        *) printf false ;;
+    esac
+}
+
+run_action() {
+    case "$1" in
+        lock)
+            "$lock"
+            ;;
+        logout)
+            if "$confirm" "Log out of this session?" "Log out"; then
+                "$uwsm" stop
+            fi
+            ;;
+        sleep)
+            if "$confirm" "Suspend the system?" Suspend; then
+                "$systemctl" suspend
+            fi
+            ;;
+        hibernate)
+            if "$confirm" "Hibernate the system?" Hibernate; then
+                "$systemctl" hibernate
+            fi
+            ;;
+        reboot)
+            if "$confirm" "Reboot the system?" Reboot; then
+                "$systemctl" reboot
+            fi
+            ;;
+        poweroff)
+            if "$confirm" "Power off the system?" "Power off"; then
+                "$systemctl" poweroff
+            fi
+            ;;
+        *)
+            printf 'ui-power: invalid action: %s\n' "$1" >&2
+            exit 2
+            ;;
+    esac
+}
+
+# The bar's session menu hides actions this machine cannot carry out, so it
+# asks the same question this menu asks itself.
+if [ "$#" -eq 2 ] && [ "$1" = can ]; then
+    case "$2" in
+        hibernate) capability CanHibernate ;;
+        suspend) capability CanSuspend ;;
+        *)
+            printf 'ui-power: unknown capability: %s\n' "$2" >&2
+            exit 2
+            ;;
+    esac
+    printf '\n'
+    exit 0
+fi
+
+if [ "$#" -eq 1 ]; then
+    run_action "$1"
+    exit 0
+fi
+
+mode=$("$desktop_theme" get)
+case "$mode" in
+    dark|light) ;;
+    *)
+        printf 'ui-power: invalid theme mode: %s\n' "$mode" >&2
+        exit 1
+        ;;
+esac
+
+# logind knows whether hibernation has a resume device and enough swap behind
+# it. Offering the action without that only fails once the menu has closed.
+if [ "$(capability CanHibernate)" = true ]; then
+    hibernate_entry='Hibernate\n'
+else
+    hibernate_entry=''
+fi
+
+if ! action=$(
+    printf 'Lock\nLog out\nSleep\n%bReboot\nPower off\n' \
+        "$hibernate_entry" |
+        "$rofi" \
+            -dmenu \
+            -p Power \
+            -monitor -1 \
+            -theme "$config_home/rofi/themes/power-$mode.rasi" \
+            -no-custom \
+            -selected-row 0
+); then
+    exit 0
+fi
+
+case "$action" in
+    "Lock") run_action lock ;;
+    "Log out") run_action logout ;;
+    "Sleep") run_action sleep ;;
+    "Hibernate") run_action hibernate ;;
+    "Reboot") run_action reboot ;;
+    "Power off") run_action poweroff ;;
+    "") ;;
+    *)
+        printf 'ui-power: invalid action: %s\n' "$action" >&2
+        exit 2
+        ;;
+esac

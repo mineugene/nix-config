@@ -1,0 +1,31 @@
+(defwidget menu-popup-content []
+  (popup-frame :kind "menu-popup"
+    (box
+      :class "menu-actions"
+      :orientation "vertical"
+      :space-evenly false
+      (popup-action :action "@popupToggle@ hardware"
+        (label :xalign 0 :text "System information"))
+      (popup-action :action "@menuCommand@ reload-compositor"
+        (label :xalign 0 :text "Reload compositor"))
+      (popup-action :action "@menuCommand@ terminal"
+        (label :xalign 0 :text "Open terminal"))
+      (popup-action :action "@menuCommand@ force-quit"
+        (label :xalign 0 :text "Force quit ..."))
+      (popup-action :action "@menuCommand@ quit ${hyprland_state.address}"
+        (label
+          :xalign 0
+          :text {hyprland_state.app != "" ? `Quit '${hyprland_state.app}'` : "Quit focused window"})))))
+
+(defwindow menu
+  :monitor 0
+  :geometry (geometry
+    :x "0px"
+    :y "@popupTop@px"
+    :width "@popupWidth@px"
+    :anchor "top left")
+  :stacking "overlay"
+  :exclusive false
+  :focusable "none"
+  :namespace "eww-menu"
+  (menu-popup-content))

@@ -1,0 +1,46 @@
+;; Capabilities do not change while a session runs, but a poll costs nothing
+;; at this interval and survives a machine gaining swap or a resume device
+;; without a restart of the bar.
+(defpoll can_hibernate
+  :interval "1h"
+  :initial "false"
+  `@uiPower@ can hibernate`)
+
+(defwidget profile-popup-content []
+  (popup-frame :kind "profile-popup"
+    (box
+      :class "menu-actions"
+      :orientation "vertical"
+      :space-evenly false
+      (popup-action :action "@uiPower@ lock"
+        (label :xalign 0 :text "Lock"))
+      (popup-action :action "@uiPower@ logout"
+        (label :xalign 0 :text "Log out"))
+      (popup-action :action "@uiPower@ sleep"
+        (label :xalign 0 :text "Sleep"))
+      ;; An action the machine cannot carry out is worse than a missing one:
+      ;; it fails silently well after the menu has closed. The wrapper carries
+      ;; the visibility so the row itself stays the shared shape.
+      (box
+        :visible {can_hibernate == "true"}
+        :orientation "vertical"
+        :space-evenly false
+        (popup-action :action "@uiPower@ hibernate"
+          (label :xalign 0 :text "Hibernate")))
+      (popup-action :action "@uiPower@ reboot"
+        (label :xalign 0 :text "Reboot"))
+      (popup-action :action "@uiPower@ poweroff"
+        (label :xalign 0 :text "Power off")))))
+
+(defwindow profile
+  :monitor 0
+  :geometry (geometry
+    :x "0px"
+    :y "@popupTop@px"
+    :width "@popupWidth@px"
+    :anchor "top right")
+  :stacking "overlay"
+  :exclusive false
+  :focusable "none"
+  :namespace "eww-profile"
+  (profile-popup-content))

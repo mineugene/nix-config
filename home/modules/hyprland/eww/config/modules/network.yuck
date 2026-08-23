@@ -1,0 +1,126 @@
+;; One listener, two controls. Wi-Fi and Ethernet are independent links, so the
+;; bar reports both at once rather than showing whichever won a priority
+;; contest; the shared state stays here because a deflisten may be declared
+;; only once.
+(deflisten network_state
+  :initial `@networkInitial@`
+  `@networkListener@ listen`)
+
+;; Association has no glyph of its own, so it is drawn as motion: the ladder
+;; sweeps up and back down. run-while stops the poll outright whenever nothing
+;; is connecting, which is almost always, so the animation costs nothing at
+;; rest.
+(defpoll wifi_frame
+  :interval "180ms"
+  :initial 0
+  :run-while {network_state.wifi.state == "connecting"}
+  `@animationFrame@ 180 8`)
+
+;; The ring reports activity, not rate: the right half lights on receive and
+;; the left on transmit. A throughput fraction would sit near zero on a fast
+;; link and jitter on a slow one, so each half is simply on or off.
+;;
+;; The floor is 4 KiB/s rather than zero because an idle link is never silent.
+;; A quiet wired link still carries 266-1031 B/s of ARP, mDNS and keepalive
+;; chatter, which lit both halves permanently. 4 KiB/s clears that measured
+;; ceiling roughly fourfold while any real transfer, even a single page load
+;; averaged over the 2s poll, sits far above it.
+(defwidget network-ring [link icon nudge tooltip visible]
+  (eventbox
+    :class `network ${link.kind} ${link.state}`
+    :visible visible
+    :cursor "pointer"
+    :tooltip tooltip
+    :onclick "@popupToggle@ network"
+    (overlay
+      ;; The base child sizes the overlay and holds the icon, which keeps
+      ;; inheriting the bar foreground and its hover colour. The halves above
+      ;; carry their own colours and would otherwise tint the glyph.
+      (circular-progress
+        :class "network-meter"
+        :value 0
+        :thickness 3
+        :start-at 75
+        (bar-icon :icon icon :nudge nudge))
+      ;; Both halves start at the top. Clockwise sweeps the right half, and
+      ;; counter-clockwise draws back from the same origin over the left.
+      (circular-progress
+        :class "network-meter network-meter-rx"
+        :value {link.rx_bytes_per_second >= 4096 ? 50 : 0}
+        :thickness 3
+        :start-at 75
+        :clockwise true)
+      (circular-progress
+        :class "network-meter network-meter-tx"
+        :value {link.tx_bytes_per_second >= 4096 ? 50 : 0}
+        :thickness 3
+        :start-at 75
+        :clockwise false))))
+
+(defwidget wifi []
+  (network-ring
+    :link {network_state.wifi}
+    :visible {network_state.wifi.available}
+    ;; The glyph ladder reads centred at plain geometric centring, so Wi-Fi
+    ;; opts out of measurement entirely rather than carrying a nudge.
+    :nudge ""
+    :tooltip {open_popup == "network" ? "" : network_state.wifi.connected
+      ? (network_state.wifi.internet
+        ? "${network_state.wifi.name} · ${network_state.wifi.ip}"
+        : "${network_state.wifi.name} · no internet")
+      : (network_state.wifi.state == "connecting" ? "Wi-Fi connecting"
+        : (network_state.wifi.state == "off" ? "Wi-Fi disabled"
+          : (network_state.wifi.state == "unavailable" ? "Wi-Fi unavailable"
+            : "Wi-Fi disconnected")))}
+    ;; Signal ladders differ only by glyph: reachable above, unreachable
+    ;; below, so the thresholds stay aligned for editing.
+    ;; The boomerang runs 0-4 and back: eight frames, so the two ends are not
+    ;; held twice as long as the rungs between them.
+    ;; A blocked radio and a down interface are the same dead end to the user:
+    ;; nothing here works until something is switched back on.
+    :icon {network_state.wifi.state == "off" || network_state.wifi.state == "unavailable" ? "󰤭"
+      : network_state.wifi.state == "connecting"
+        ? (wifi_frame == 0 ? "󰤯"
+          : wifi_frame == 1 || wifi_frame == 7 ? "󰤟"
+            : wifi_frame == 2 || wifi_frame == 6 ? "󰤢"
+              : wifi_frame == 3 || wifi_frame == 5 ? "󰤥"
+                : "󰤨")
+      : network_state.wifi.connected
+        ? (network_state.wifi.internet
+          ? ((network_state.wifi.signal ?: -1) < 20 ? "󰤯"
+            : (network_state.wifi.signal ?: -1) < 40 ? "󰤟"
+            : (network_state.wifi.signal ?: -1) < 60 ? "󰤢"
+            : (network_state.wifi.signal ?: -1) < 80 ? "󰤥"
+            : "󰤨")
+          : ((network_state.wifi.signal ?: -1) < 20 ? "󰤫"
+            : (network_state.wifi.signal ?: -1) < 40 ? "󰤠"
+            : (network_state.wifi.signal ?: -1) < 60 ? "󰤣"
+            : (network_state.wifi.signal ?: -1) < 80 ? "󰤦"
+            : "󰤩"))
+        ;; A down interface is not a weak signal: the alert ladder means
+        ;; associated with no route out, so an unassociated radio says off.
+        : "󰤮"}))
+
+;; A machine with no interface at all still has to say so, and Ethernet is the
+;; control that stands in for the whole network: it stays visible when neither
+;; kind exists, showing the no-connection glyph. Whenever Wi-Fi is present, an
+;; absent Ethernet interface simply hides.
+(defwidget ethernet []
+  (network-ring
+    :link {network_state.ethernet}
+    :visible {network_state.ethernet.available || !network_state.wifi.available}
+    :nudge "ethernet"
+    :tooltip {open_popup == "network" ? "" : network_state.ethernet.connected
+      ? (network_state.ethernet.internet
+        ? "${network_state.ethernet.name} · ${network_state.ethernet.ip}"
+        : "${network_state.ethernet.name} · no internet")
+      : (network_state.ethernet.state == "connecting" ? "Ethernet connecting"
+        : (network_state.ethernet.available ? "Ethernet disconnected"
+          : "No network connection"))}
+    ;; Four different failures, four glyphs: no interface at all, a link still
+    ;; negotiating, a link up with no route out, and an unplugged port.
+    :icon {!network_state.ethernet.available ? "󰲛"
+      : network_state.ethernet.state == "connecting" ? "󰲝"
+        : network_state.ethernet.connected
+          ? (network_state.ethernet.internet ? "󰈀" : "󰅛")
+          : "󰈂"}))
