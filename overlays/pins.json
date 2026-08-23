@@ -1,0 +1,41 @@
+{
+	"bottom": {
+		"owner": "ClementTsang",
+		"repo": "bottom",
+		"mode": "tag",
+		"tagPrefix": "",
+		"version": "0.14.9",
+		"ref": "0.14.9",
+		"srcHash": "sha256-Dvo3A8NIYp0URgYSJOxLW/zEA7Gnpqu9pk6hvpagFZE=",
+		"depHash": "sha256-PYbmqiE8G+or1NEtPxnWIXcHnKIBSjQ3FN/Zafb/BTw="
+	},
+	"eww": {
+		"owner": "elkowar",
+		"repo": "eww",
+		"mode": "rev",
+		"tagPrefix": "",
+		"version": "0.6.0-unstable-2026-07-17",
+		"ref": "48f5aa8b379adf29da0b0bb9ca04164f65d8bdaa",
+		"srcHash": "sha256-qctOkZtSvJPx3Gv/BaZE6oZ6qSl7/VGWuUkIVfp3IOw=",
+		"depHash": "sha256-Kf99eojqXvdbZ3eRS8GBgyLYNpZKJGIJtsOsvhhSVDk="
+	},
+	"swaync": {
+		"owner": "ErikReider",
+		"repo": "SwayNotificationCenter",
+		"mode": "tag",
+		"tagPrefix": "v",
+		"version": "0.12.6",
+		"ref": "v0.12.6",
+		"srcHash": "sha256-U5jsH2hSMTNMCtmo+lIXunam4M+B3xxMQU1SM3ZK5X0="
+	},
+	"yubikey-touch-detector": {
+		"owner": "max-baz",
+		"repo": "yubikey-touch-detector",
+		"mode": "tag",
+		"tagPrefix": "",
+		"version": "1.15.0",
+		"ref": "1.15.0",
+		"srcHash": "sha256-GaahrYx5ySUIAM073JknQGPwC2pw2VXj3D25sEZANJk=",
+		"depHash": "sha256-Uvybz2i2i/EWJvmvlb4VcJo/2SNaDAuj8t997sxlvtY="
+	}
+}

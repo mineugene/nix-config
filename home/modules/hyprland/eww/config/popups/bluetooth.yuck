@@ -1,0 +1,38 @@
+(defwidget bluetooth-popup-content []
+  (popup-frame :kind "bluetooth-popup"
+    (box
+      :class "network-dashboard"
+      :orientation "vertical"
+      :space-evenly false
+      :spacing @spacingNormal@
+      (popup-title :text "Bluetooth")
+      ;; The adapter is present either way, so an off radio keeps its control
+      ;; and says it is off; hiding it would remove the only way to switch it
+      ;; back on.
+      (button
+        :class "menu-action"
+        :sensitive {bluetooth_state.available}
+        :onclick "@bluetooth@ toggle"
+        (label
+          :xalign 0
+          :text {bluetooth_state.powered ? "Turn Bluetooth off" : "Turn Bluetooth on"}))
+      (popup-section :title "Adapter"
+        (popup-detail
+          :name "Status"
+          :value {!bluetooth_state.available ? "Unavailable"
+            : !bluetooth_state.powered ? "Off"
+              : bluetooth_state.connected ? "Connected"
+                : "On"})))))
+
+(defwindow bluetooth
+  :monitor 0
+  :geometry (geometry
+    :x "0px"
+    :y "@popupTop@px"
+    :width "@popupWidth@px"
+    :anchor "top right")
+  :stacking "overlay"
+  :exclusive false
+  :focusable "none"
+  :namespace "eww-bluetooth"
+  (bluetooth-popup-content))
