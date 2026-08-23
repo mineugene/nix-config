@@ -1,0 +1,65 @@
+(defwidget audio-popup-content []
+  (popup-frame :kind "audio-popup"
+    (box
+      :class "audio-dashboard"
+      :orientation "vertical"
+      :space-evenly false
+      :spacing @spacingNormal@
+      (label
+        :class "audio-title"
+        :halign "start"
+        :text "Audio")
+      (box
+        :class "audio-section"
+        :orientation "vertical"
+        :space-evenly false
+        :spacing @spacingSmall@
+        (label
+          :class "audio-section-title"
+          :halign "start"
+          :text {audio_status.sink.description})
+        (scale
+          :sensitive {audio_status.sink.available}
+          :value {audio_status.sink.volume}
+          :min 0
+          :max 100
+          :onchange "@audio@ set-sink {}")
+        (button
+          :class {audio_status.sink.muted ? "audio-control muted" : "audio-control"}
+          :halign "start"
+          :onclick "@audio@ toggle-sink"
+          (label :text {audio_status.sink.muted ? "Output muted" : "Output ${audio_status.sink.volume}%"})))
+      (box
+        :class "audio-section"
+        :orientation "vertical"
+        :space-evenly false
+        :spacing @spacingSmall@
+        (label
+          :class "audio-section-title"
+          :halign "start"
+          :text {audio_status.source.description})
+        (scale
+          :sensitive {audio_status.source.available}
+          :value {audio_status.source.volume}
+          :min 0
+          :max 100
+          :onchange "@audio@ set-source {}")
+        (button
+          :class {audio_status.source.muted ? "audio-control muted" : "audio-control"}
+          :halign "start"
+          :onclick "@audio@ toggle-source"
+          (label :text {!audio_status.source.available ? "Microphone unavailable" : audio_status.source.muted ? "Microphone muted" : "Microphone ${audio_status.source.volume}%"}))))))
+
+(defwindow audio
+  :monitor 0
+  :geometry (geometry
+    :x "@popupRight@px"
+    :y "@popupTop@px"
+    :width "340px"
+    :height "280px"
+    :anchor "top right")
+  :stacking "overlay"
+  :exclusive false
+  :focusable "ondemand"
+  :namespace "eww-audio"
+  (audio-popup-content))

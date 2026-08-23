@@ -1,0 +1,52 @@
+(defpoll clock_text
+  :interval "60s"
+  `@date@ "+%a %b %d  %H:%M"`)
+
+(defpoll motd_text
+  :interval "60s"
+  `@fastfetch@ --logo none --pipe`)
+
+(defwidget bar-content []
+  (centerbox
+    :class "bar-layout"
+    :orientation "horizontal"
+    (box)
+    (box
+      :class "island clock"
+      (label :text {clock_text}))
+    (box)))
+
+(defwindow bar
+  :monitor 0
+  :geometry (geometry
+    :x "0px"
+    :y "6px"
+    :width "100%"
+    :height "30px"
+    :anchor "top center")
+  :stacking "overlay"
+  :exclusive true
+  :focusable "none"
+  :namespace "greetd-bar"
+  (bar-content))
+
+(defwindow motd
+  :monitor 0
+  :geometry (geometry
+    :x "32px"
+    :y "52px"
+    :width "560px"
+    :height "440px"
+    :anchor "top left")
+  :stacking "overlay"
+  :exclusive false
+  :focusable "none"
+  :namespace "greetd-motd"
+  (box
+    :class "motd-panel"
+    :orientation "vertical"
+    (label
+      :class "motd-text"
+      :halign "start"
+      :valign "start"
+      :text {motd_text})))

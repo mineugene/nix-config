@@ -1,0 +1,30 @@
+(deflisten notification_state
+  :initial `{"count":0,"dnd":false,"visible":false,"inhibited":false}`
+  `@swayncClient@ --subscribe`)
+
+(defwidget notifications []
+  (box
+    :class {notification_state.dnd ? "notifications dnd" : notification_state.count > 0 ? "notifications unread" : "notifications empty"}
+    :orientation "horizontal"
+    :space-evenly false
+    (eventbox
+      :onrightclick "@swayncClient@ --skip-wait --toggle-dnd"
+      (button
+        :class "notifications-center"
+        :onclick "@swayncClient@ --skip-wait --toggle-panel"
+        :tooltip {notification_state.dnd ? "Do not disturb enabled — open notifications; right-click to disable" : notification_state.count > 0 ? "Open uncleared notifications; right-click to enable do not disturb" : "No uncleared notifications; right-click to enable do not disturb"}
+        (box
+          :orientation "horizontal"
+          :space-evenly false
+          :spacing @spacingSmall@
+          (label :text {notification_state.dnd ? "󰂛" : notification_state.count > 0 ? "󰂞" : "󰂚"})
+          (label
+            :class "notification-count"
+            :visible {notification_state.count > 0}
+            :text {notification_state.count}))))
+    (button
+      :class "notifications-dismiss-all"
+      :visible {notification_state.count > 0}
+      :onclick "@swayncClient@ --skip-wait --close-all"
+      :tooltip "Dismiss all notifications"
+      (label :text "󰅖"))))

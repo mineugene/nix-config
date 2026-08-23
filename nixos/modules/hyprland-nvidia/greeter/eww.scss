@@ -1,0 +1,44 @@
+* {
+	font-family: Cantarell, sans-serif;
+	font-size: 13px;
+}
+
+window {
+	background-color: transparent;
+}
+
+.bar-layout {
+	padding: 0 6px;
+	/* prettier-ignore */
+	color: @foreground@;
+}
+
+.island {
+	padding: 0 8px;
+	/* prettier-ignore */
+	background-color: @surface@;
+	/* prettier-ignore */
+	border: 1px solid @border@;
+	border-radius: 999px;
+}
+
+.clock {
+	font-weight: 600;
+	letter-spacing: 0.04em;
+}
+
+.motd-panel {
+	padding: 12px;
+	/* prettier-ignore */
+	background-color: rgba(@surface@, 0.78);
+	/* prettier-ignore */
+	border: 1px solid @border@;
+	border-radius: 6px;
+	/* prettier-ignore */
+	color: @foreground@;
+}
+
+.motd-text {
+	font-family: monospace;
+	font-size: 13px;
+}

@@ -1,0 +1,59 @@
+if (( $# != 0 )); then
+    printf 'usage: ui-power\n' >&2
+    exit 2
+fi
+
+config_home=${XDG_CONFIG_HOME:-${HOME:?HOME must be set}/.config}
+confirm=${UI_CONFIRM:-@confirm@}
+desktop_theme=${UI_DESKTOP_THEME:-@desktopTheme@}
+lock=${UI_LOCK:-@lock@}
+rofi=${UI_ROFI:-@rofi@}
+systemctl=${UI_SYSTEMCTL:-@systemctl@}
+uwsm=${UI_UWSM:-@uwsm@}
+mode=$("$desktop_theme" get)
+case "$mode" in
+    dark|light) ;;
+    *)
+        printf 'ui-power: invalid theme mode: %s\n' "$mode" >&2
+        exit 1
+        ;;
+esac
+
+if ! action=$(
+    printf 'Lock\nLogout\nReboot\nShutdown\n' |
+        "$rofi" \
+            -dmenu \
+            -p Power \
+            -monitor -1 \
+            -theme "$config_home/rofi/themes/power-$mode.rasi" \
+            -no-custom \
+            -selected-row 0
+); then
+    exit 0
+fi
+
+case "$action" in
+    Lock)
+        "$lock"
+        ;;
+    Logout)
+        if "$confirm" "Log out of this session?" "Log out"; then
+            "$uwsm" stop
+        fi
+        ;;
+    Reboot)
+        if "$confirm" "Reboot the system?" Reboot; then
+            "$systemctl" reboot
+        fi
+        ;;
+    Shutdown)
+        if "$confirm" "Shut down the system?" "Shut down"; then
+            "$systemctl" poweroff
+        fi
+        ;;
+    "") ;;
+    *)
+        printf 'ui-power: invalid action: %s\n' "$action" >&2
+        exit 2
+        ;;
+esac

@@ -1,0 +1,11 @@
+(defwidget active-window []
+  (box
+    :class "island active-window"
+    :visible {hyprland_state.title != ""}
+    (label
+      :class "window-title"
+      :text {hyprland_state.title}
+      :limit-width 60
+      :truncate true
+      :tooltip {hyprland_state.title}
+      :xalign 0.0)))

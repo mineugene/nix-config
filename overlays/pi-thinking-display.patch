@@ -1,0 +1,123 @@
+diff --git a/packages/coding-agent/src/core/extensions/runner.ts b/packages/coding-agent/src/core/extensions/runner.ts
+index fc486e4..7e0592a 100644
+--- a/packages/coding-agent/src/core/extensions/runner.ts
++++ b/packages/coding-agent/src/core/extensions/runner.ts
+@@ -243,6 +243,7 @@ const noOpUIContext: ExtensionUIContext = {
+ 	setWorkingVisible: () => {},
+ 	setWorkingIndicator: () => {},
+ 	setHiddenThinkingLabel: () => {},
++	isThinkingBlockHidden: () => false,
+ 	setWidget: () => {},
+ 	setFooter: () => {},
+ 	setHeader: () => {},
+diff --git a/packages/coding-agent/src/core/extensions/types.ts b/packages/coding-agent/src/core/extensions/types.ts
+index db0ebac..dd3811d 100644
+--- a/packages/coding-agent/src/core/extensions/types.ts
++++ b/packages/coding-agent/src/core/extensions/types.ts
+@@ -166,6 +166,9 @@ export interface ExtensionUIContext {
+ 	/** Set the label shown for hidden thinking blocks. Call with no argument to restore default. */
+ 	setHiddenThinkingLabel(label?: string): void;
+ 
++	/** Whether hidden thinking blocks are currently shown instead of detailed thinking. */
++	isThinkingBlockHidden(): boolean;
++
+ 	/** Set a widget to display above or below the editor. Accepts string array or component factory. */
+ 	setWidget(key: string, content: string[] | undefined, options?: ExtensionWidgetOptions): void;
+ 	setWidget(
+diff --git a/packages/coding-agent/src/modes/interactive/components/assistant-message.ts b/packages/coding-agent/src/modes/interactive/components/assistant-message.ts
+index 0afaeb1..c725ae6 100644
+--- a/packages/coding-agent/src/modes/interactive/components/assistant-message.ts
++++ b/packages/coding-agent/src/modes/interactive/components/assistant-message.ts
+@@ -96,8 +96,12 @@ export class AssistantMessageComponent extends Container {
+ 		const hasVisibleContent = message.content.some(
+ 			(c) => (c.type === "text" && c.text.trim()) || (c.type === "thinking" && c.thinking.trim()),
+ 		);
++		const hidesVisibleThinking =
++			this.hideThinkingBlock &&
++			this.hiddenThinkingLabel === "" &&
++			message.content.some((c) => c.type === "thinking" && c.thinking.trim());
+ 
+-		if (hasVisibleContent) {
++		if (hasVisibleContent && !hidesVisibleThinking) {
+ 			this.contentContainer.addChild(new Spacer(1));
+ 		}
+ 
+@@ -138,9 +142,11 @@ export class AssistantMessageComponent extends Container {
+ 
+ 				if (this.hideThinkingBlock) {
+ 					// Show one static label for each run of thinking blocks when hidden.
+-					this.contentContainer.addChild(
+-						new Text(theme.italic(theme.fg("thinkingText", this.hiddenThinkingLabel)), this.outputPad, 0),
+-					);
++					if (this.hiddenThinkingLabel) {
++						this.contentContainer.addChild(
++							new Text(theme.italic(theme.fg("thinkingText", this.hiddenThinkingLabel)), this.outputPad, 0),
++						);
++					}
+ 				} else {
+ 					// Render each run of thinking blocks as one Markdown section.
+ 					this.contentContainer.addChild(
+diff --git a/packages/coding-agent/src/modes/interactive/interactive-mode.ts b/packages/coding-agent/src/modes/interactive/interactive-mode.ts
+index 6d5e6b8..6580b13 100644
+--- a/packages/coding-agent/src/modes/interactive/interactive-mode.ts
++++ b/packages/coding-agent/src/modes/interactive/interactive-mode.ts
+@@ -2383,6 +2383,7 @@ export class InteractiveMode {
+ 			setWorkingVisible: (visible) => this.setWorkingVisible(visible),
+ 			setWorkingIndicator: (options) => this.setWorkingIndicator(options),
+ 			setHiddenThinkingLabel: (label) => this.setHiddenThinkingLabel(label),
++			isThinkingBlockHidden: () => this.hideThinkingBlock,
+ 			setWidget: (key, content, options) => this.setExtensionWidget(key, content, options),
+ 			setFooter: (factory) => this.setExtensionFooter(factory),
+ 			setHeader: (factory) => this.setExtensionHeader(factory),
+diff --git a/packages/coding-agent/src/modes/rpc/rpc-mode.ts b/packages/coding-agent/src/modes/rpc/rpc-mode.ts
+index 1b5d8a6..02d4e2d 100644
+--- a/packages/coding-agent/src/modes/rpc/rpc-mode.ts
++++ b/packages/coding-agent/src/modes/rpc/rpc-mode.ts
+@@ -192,6 +192,10 @@ export async function runRpcMode(runtimeHost: AgentSessionRuntime): Promise<neve
+ 			// Hidden thinking label not supported in RPC mode - requires TUI message rendering access
+ 		},
+ 
++		isThinkingBlockHidden(): boolean {
++			return false;
++		},
++
+ 		setWidget(key: string, content: unknown, options?: ExtensionWidgetOptions): void {
+ 			// Only support string arrays in RPC mode - factory functions are ignored
+ 			if (content === undefined || Array.isArray(content)) {
+diff --git a/packages/coding-agent/test/assistant-message.test.ts b/packages/coding-agent/test/assistant-message.test.ts
+index 2ab64c0..7bdba1d 100644
+--- a/packages/coding-agent/test/assistant-message.test.ts
++++ b/packages/coding-agent/test/assistant-message.test.ts
+@@ -91,6 +91,32 @@ describe("AssistantMessageComponent", () => {
+ 		expect(rendered).toContain("answer");
+ 	});
+ 
++	test("keeps one blank row before answers when the hidden thinking label is empty", () => {
++		initTheme("dark");
++		const thinkingAndText: AssistantMessage["content"] = [
++			{ type: "thinking", thinking: "private reasoning" },
++			{ type: "text", text: "answer" },
++		];
++		const components = [
++			new AssistantMessageComponent(createAssistantMessage(thinkingAndText), true, undefined, ""),
++			new AssistantMessageComponent(
++				createAssistantMessage([{ type: "text", text: "answer" }]),
++				true,
++				undefined,
++				"",
++			),
++			new AssistantMessageComponent(createAssistantMessage(thinkingAndText), false, undefined, ""),
++		];
++
++		for (const component of components) {
++			const lines = component.render(80).map((line) => stripAnsi(line));
++			const answerIndex = lines.findIndex((line) => line.includes("answer"));
++			expect(answerIndex).toBeGreaterThan(0);
++			expect(lines[answerIndex - 1]?.trim()).toBe("");
++			expect(lines[answerIndex - 2]?.trim()).not.toBe("");
++		}
++	});
++
+ 	test("uses configured output padding for text and thinking", () => {
+ 		initTheme("dark");
+ 

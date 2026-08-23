@@ -1,0 +1,11 @@
+configuration {
+    show-icons: true;
+}
+
+mainbox {
+    children: [ inputbar, listview ];
+}
+
+listview {
+    lines: 8;
+}

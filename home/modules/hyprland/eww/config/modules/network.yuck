@@ -1,0 +1,22 @@
+(deflisten network_state
+  :initial `{"state":"unavailable","connected":false,"kind":"none","interface":"","name":"Unavailable","signal":null,"ip":"","rx_bytes_per_second":0,"tx_bytes_per_second":0}`
+  `@networkListener@ listen`)
+
+(defwidget network []
+  (eventbox
+    :class `network ${network_state.state}`
+    :cursor "pointer"
+    :tooltip {network_state.connected ? `${network_state.name} · ${network_state.ip}` : network_state.state == "connecting" ? "Network connecting" : network_state.state == "disconnected" ? "Network disconnected" : "Network status unavailable"}
+    :onclick "@popupToggle@ network"
+    (box
+      :orientation "horizontal"
+      :space-evenly false
+      :spacing @spacingSmall@
+      (label
+        :text {network_state.state == "wifi" ? (network_state.signal ?: -1) >= 0 && network_state.signal < 35 ? "󰤯" : (network_state.signal ?: -1) >= 0 && network_state.signal < 65 ? "󰤢" : "󰤨" : network_state.state == "wired" ? "󰈀" : network_state.state == "connected" ? "󰛳" : network_state.state == "connecting" ? "󱍸" : network_state.state == "disconnected" ? "󰤭" : "󰤮"})
+      (label
+        :class "network-name"
+        :visible {network_state.connected}
+        :limit-width 18
+        :truncate true
+        :text {network_state.name}))))

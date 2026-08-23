@@ -1,0 +1,16 @@
+(deflisten hyprland_state
+  :initial `@hyprlandInitial@`
+  `@hyprlandListener@`)
+
+(defwidget workspaces []
+  (box
+    :class "island workspaces"
+    :orientation "horizontal"
+    :space-evenly false
+    :spacing @spacingSmall@
+    (for workspace in {hyprland_state.workspaces}
+      (button
+        :class `workspace ${workspace.occupied ? "occupied" : "empty"} ${workspace.active ? "active" : ""} ${workspace.urgent ? "urgent" : ""}`
+        :tooltip `Workspace ${workspace.id}`
+        :onclick "@workspaceCommand@ ${workspace.id}"
+        (label :text {workspace.id})))))

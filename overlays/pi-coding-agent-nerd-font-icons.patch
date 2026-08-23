@@ -1,0 +1,96 @@
+diff --git a/packages/coding-agent/src/modes/interactive/components/model-selector.ts b/packages/coding-agent/src/modes/interactive/components/model-selector.ts
+index d1f7788..63a4481 100644
+--- a/packages/coding-agent/src/modes/interactive/components/model-selector.ts
++++ b/packages/coding-agent/src/modes/interactive/components/model-selector.ts
+@@ -324 +324 @@ export class ModelSelectorComponent extends Container implements Focusable {
+-				const checkmark = isCurrent ? theme.fg("success", " ✓") : "";
++				const checkmark = isCurrent ? theme.fg("success", " \u{f058} ") : "";
+@@ -329 +329 @@ export class ModelSelectorComponent extends Container implements Focusable {
+-				const checkmark = isCurrent ? theme.fg("success", " ✓") : "";
++				const checkmark = isCurrent ? theme.fg("success", " \u{f058} ") : "";
+ 
+diff --git a/packages/coding-agent/src/modes/interactive/components/oauth-selector.ts b/packages/coding-agent/src/modes/interactive/components/oauth-selector.ts
+index d599168..7a34901 100644
+--- a/packages/coding-agent/src/modes/interactive/components/oauth-selector.ts
++++ b/packages/coding-agent/src/modes/interactive/components/oauth-selector.ts
+@@ -172,12 +172,12 @@ export class OAuthSelectorComponent extends Container implements Focusable {
+ 			provider.status.source === "OAuth" ||
+ 			provider.status.source === "stored credential"
+ 		) {
+-			return theme.fg("success", " ✓ configured");
++			return theme.fg("success", " \u{f058}  configured");
+ 		}
+ 		const source = /^[A-Z][A-Z0-9_]*(?:, [A-Z][A-Z0-9_]*)*$/.test(provider.status.source)
+ 			? `env: ${provider.status.source}`
+ 			: provider.status.source;
+-		return theme.fg("success", ` ✓ ${source}`);
++		return theme.fg("success", ` \u{f058}  ${source}`);
+ 	}
+ 
+ 	handleInput(keyData: string): void {
+diff --git a/packages/coding-agent/src/modes/interactive/components/scoped-models-selector.ts b/packages/coding-agent/src/modes/interactive/components/scoped-models-selector.ts
+index e7dfc27..6677780 100644
+--- a/packages/coding-agent/src/modes/interactive/components/scoped-models-selector.ts
++++ b/packages/coding-agent/src/modes/interactive/components/scoped-models-selector.ts
+@@ -253,7 +253,7 @@ export class ScopedModelsSelectorComponent extends Container implements Focusabl
+ 				? allEnabled
+ 					? ""
+ 					: item.enabled
+-						? theme.fg("success", " ✓")
++						? theme.fg("success", " \u{f058} ")
+ 						: theme.fg("dim", " ✗")
+ 				: theme.fg("dim", " ✗");
+ 			this.listContainer.addChild(new Text(`${prefix}${modelText}${providerBadge}${status}`, 0, 0));
+diff --git a/packages/coding-agent/src/modes/interactive/components/trust-selector.ts b/packages/coding-agent/src/modes/interactive/components/trust-selector.ts
+index 92c2328..0895996 100644
+--- a/packages/coding-agent/src/modes/interactive/components/trust-selector.ts
++++ b/packages/coding-agent/src/modes/interactive/components/trust-selector.ts
+@@ -107,7 +107,7 @@ export class TrustSelectorComponent extends Container {
+ 
+ 			const isSelected = i === this.selectedIndex;
+ 			const isCurrent = this.isSavedOption(option);
+-			const checkmark = isCurrent ? theme.fg("success", " ✓") : "";
++			const checkmark = isCurrent ? theme.fg("success", " \u{f058} ") : "";
+ 			const prefix = isSelected ? theme.fg("accent", "→ ") : "  ";
+ 			const label = isSelected ? theme.fg("accent", option.label) : theme.fg("text", option.label);
+ 			this.listContainer.addChild(new Text(`${prefix}${label}${checkmark}`, 1, 0));
+diff --git a/packages/coding-agent/src/modes/interactive/interactive-mode.ts b/packages/coding-agent/src/modes/interactive/interactive-mode.ts
+index 6d5e6b8..026a1f3 100644
+--- a/packages/coding-agent/src/modes/interactive/interactive-mode.ts
++++ b/packages/coding-agent/src/modes/interactive/interactive-mode.ts
+@@ -1595,7 +1595,7 @@ export class InteractiveMode {
+ 			lines.push(
+ 				theme.fg(
+ 					"dim",
+-					`    ${theme.fg("success", "✓")} ${this.formatPathWithSource(first.winnerPath, this.findSourceInfoForPath(first.winnerPath, sourceInfos))}`,
++					`    ${theme.fg("success", "\u{f058}")}  ${this.formatPathWithSource(first.winnerPath, this.findSourceInfoForPath(first.winnerPath, sourceInfos))}`,
+ 				),
+ 			);
+ 			for (const d of collisionList) {
+@@ -4245,7 +4245,7 @@ export class InteractiveMode {
+ 				this.pendingMessagesContainer.addChild(new TruncatedText(text, 1, 0));
+ 			}
+ 			const dequeueHint = this.getAppKeyDisplay("app.message.dequeue");
+-			const hintText = theme.fg("dim", `↳ ${dequeueHint} to edit all queued messages`);
++			const hintText = theme.fg("dim", `\u{f17a9}  ${dequeueHint} to edit all queued messages`);
+ 			this.pendingMessagesContainer.addChild(new TruncatedText(hintText, 1, 0));
+ 		}
+ 	}
+@@ -6265,7 +6265,7 @@ export class InteractiveMode {
+ 				return;
+ 			}
+ 			this.chatContainer.addChild(new Spacer(1));
+-			this.chatContainer.addChild(new Text(`${theme.fg("accent", "✓ New session started")}`, 1, 1));
++			this.chatContainer.addChild(new Text(`${theme.fg("accent", "\u{f058}  New session started")}`, 1, 1));
+ 			this.ui.requestRender();
+ 		} catch (error: unknown) {
+ 			await this.handleFatalRuntimeError("Failed to create session", error);
+@@ -6300,7 +6300,7 @@ export class InteractiveMode {
+ 
+ 		this.chatContainer.addChild(new Spacer(1));
+ 		this.chatContainer.addChild(
+-			new Text(`${theme.fg("accent", "✓ Debug log written")}\n${theme.fg("muted", debugLogPath)}`, 1, 1),
++			new Text(`${theme.fg("accent", "\u{f058}  Debug log written")}\n${theme.fg("muted", debugLogPath)}`, 1, 1),
+ 		);
+ 		this.ui.requestRender();
+ 	}

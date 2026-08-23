@@ -1,0 +1,12 @@
+mainbox {
+    children: [ listview ];
+}
+
+listview {
+    lines: 4;
+    fixed-height: true;
+}
+
+element-text {
+    horizontal-align: 0.5;
+}

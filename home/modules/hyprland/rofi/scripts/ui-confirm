@@ -1,0 +1,42 @@
+case $# in
+    1) affirmative=Yes ;;
+    2) affirmative=$2 ;;
+    *)
+        printf 'usage: ui-confirm MESSAGE [AFFIRMATIVE]\n' >&2
+        exit 2
+        ;;
+esac
+
+if [[ -z $affirmative || $affirmative == *$'\n'* || $affirmative == *$'\r'* ]]; then
+    printf 'ui-confirm: AFFIRMATIVE must be one non-empty line\n' >&2
+    exit 2
+fi
+
+config_home=${XDG_CONFIG_HOME:-${HOME:?HOME must be set}/.config}
+desktop_theme=${UI_DESKTOP_THEME:-@desktopTheme@}
+rofi=${UI_ROFI:-@rofi@}
+mode=$("$desktop_theme" get)
+case "$mode" in
+    dark|light) ;;
+    *)
+        printf 'ui-confirm: invalid theme mode: %s\n' "$mode" >&2
+        exit 1
+        ;;
+esac
+if ! choice=$(
+    printf '%s\nNo\n' "$affirmative" |
+        "$rofi" \
+            -dmenu \
+            -p Confirm \
+            -mesg "$1" \
+            -monitor -1 \
+            -theme "$config_home/rofi/themes/confirm-$mode.rasi" \
+            -no-custom \
+            -kb-cancel Escape \
+            -format i \
+            -selected-row 0
+); then
+    exit 1
+fi
+
+[[ $choice == 0 ]]

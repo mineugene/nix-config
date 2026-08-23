@@ -1,0 +1,22 @@
+if (( $# == 1 )) && [[ $1 == --help ]]; then
+    printf 'usage: ui-launcher\n'
+    exit 0
+fi
+
+if (( $# != 0 )); then
+    printf 'usage: ui-launcher\n' >&2
+    exit 2
+fi
+
+config_home=${XDG_CONFIG_HOME:-${HOME:?HOME must be set}/.config}
+desktop_theme=${UI_DESKTOP_THEME:-@desktopTheme@}
+rofi=${UI_ROFI:-@rofi@}
+mode=$("$desktop_theme" get)
+case "$mode" in
+    dark|light) ;;
+    *)
+        printf 'ui-launcher: invalid theme mode: %s\n' "$mode" >&2
+        exit 1
+        ;;
+esac
+exec "$rofi" -show drun -monitor -1 -theme "$config_home/rofi/themes/launcher-$mode.rasi"

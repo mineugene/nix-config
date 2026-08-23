@@ -1,0 +1,34 @@
+if (( $# != 0 )); then
+    printf 'usage: ui-clipboard\n' >&2
+    exit 2
+fi
+
+config_home=${XDG_CONFIG_HOME:-${HOME:?HOME must be set}/.config}
+cliphist=${UI_CLIPHIST:-@cliphist@}
+desktop_theme=${UI_DESKTOP_THEME:-@desktopTheme@}
+rofi=${UI_ROFI:-@rofi@}
+wl_copy=${UI_WL_COPY:-@wlCopy@}
+mode=$("$desktop_theme" get)
+case "$mode" in
+    dark|light) ;;
+    *)
+        printf 'ui-clipboard: invalid theme mode: %s\n' "$mode" >&2
+        exit 1
+        ;;
+esac
+selection_file=$(@mktemp@ --tmpdir ui-clipboard.XXXXXX)
+trap 'rm -f -- "$selection_file"' EXIT
+
+"$cliphist" list |
+    "$rofi" \
+        -dmenu \
+        -p Clipboard \
+        -monitor -1 \
+        -theme "$config_home/rofi/themes/clipboard-$mode.rasi" \
+        -no-custom > "$selection_file"
+
+if [[ ! -s $selection_file ]]; then
+    exit 0
+fi
+
+"$cliphist" decode < "$selection_file" | "$wl_copy"

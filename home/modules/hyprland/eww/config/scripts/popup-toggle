@@ -1,0 +1,36 @@
+#!/bin/sh
+set -eu
+
+popup_names='@popupNames@'
+popup_name=${1-}
+
+if [ "$#" -ne 1 ]; then
+    printf 'usage: popup-toggle <popup-name>\n' >&2
+    exit 64
+fi
+
+case " $popup_names " in
+    *" $popup_name "*)
+        ;;
+    *)
+        printf 'unknown popup: %s\n' "$popup_name" >&2
+        exit 64
+        ;;
+esac
+
+popup_is_open=false
+if @eww@ active-windows | @awk@ -F ': ' -v popup_name="$popup_name" '$2 == popup_name { found = 1 } END { exit !found }'; then
+    popup_is_open=true
+fi
+
+for popup in $popup_names; do
+    if [ "$popup" != "$popup_name" ]; then
+        @eww@ close "$popup" >/dev/null 2>&1 || true
+    fi
+done
+
+if [ "$popup_is_open" = true ]; then
+    @eww@ close "$popup_name"
+else
+    @eww@ open "$popup_name"
+fi

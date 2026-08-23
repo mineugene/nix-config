@@ -1,0 +1,249 @@
+@import url("theme.css");
+
+:root {
+    --notification-icon-size: 48px;
+    --notification-app-icon-size: 16px;
+    --notification-group-icon-size: 24px;
+    --notification-shadow: none;
+}
+
+* {
+    font-family: "@interfaceFontFamily@";
+    font-size: @interfaceFontSize@px;
+    color: var(--foreground);
+}
+
+notificationwindow,
+blankwindow,
+.floating-notifications,
+.blank-window {
+    background: transparent;
+}
+
+.notification-row {
+    background: transparent;
+    outline: none;
+}
+
+.notification-row .notification-background {
+    padding: @spacingSmall@px @barOuterMargin@px;
+}
+
+.floating-notifications .notification {
+    min-width: 360px;
+    background: var(--notification-background);
+    border: @borderWidth@px solid var(--notification-border);
+    border-radius: @radiusCard@px;
+    box-shadow: none;
+    padding: 0;
+    transition: background-color @animationFast@ms ease-out,
+        border-color @animationFast@ms ease-out;
+}
+
+.notification.low {
+    border-color: var(--muted);
+}
+
+.notification.critical {
+    border-color: var(--critical);
+}
+
+.notification-row:focus .notification,
+.notification-row:hover .notification {
+    background: var(--surface-hover);
+}
+
+.notification-default-action {
+    background: transparent;
+    border: none;
+    border-radius: @radiusCard@px;
+    box-shadow: none;
+    margin: 0;
+    padding: @popupPadding@px;
+}
+
+.notification-default-action:hover,
+.notification-default-action:focus {
+    background: var(--surface-hover);
+}
+
+.notification-content .summary {
+    background: transparent;
+    color: var(--foreground);
+    font-size: 1.05em;
+    font-weight: 700;
+    text-shadow: none;
+}
+
+.notification-content .body {
+    background: transparent;
+    color: var(--foreground);
+    font-weight: 400;
+    text-shadow: none;
+}
+
+.notification-content .app-name {
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.85em;
+    font-weight: 400;
+    margin-top: @spacingSmall@px;
+    text-shadow: none;
+}
+
+.notification-content .time {
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.85em;
+    font-weight: 400;
+    margin-right: 30px;
+    text-shadow: none;
+}
+
+.notification-content .image {
+    -gtk-icon-filter: none;
+    -gtk-icon-size: var(--notification-icon-size);
+    border-radius: @radiusSmall@px;
+    margin-right: @spacingNormal@px;
+}
+
+.notification-content .app-icon {
+    -gtk-icon-filter: none;
+    -gtk-icon-size: var(--notification-app-icon-size);
+    -gtk-icon-shadow: none;
+    margin: @spacingSmall@px;
+}
+
+.close-button {
+    background: var(--surface-alt);
+    border: none;
+    border-radius: @radiusPill@px;
+    box-shadow: none;
+    color: var(--muted);
+    margin-right: @spacingNormal@px;
+    margin-top: @spacingNormal@px;
+    min-height: 24px;
+    min-width: 24px;
+    padding: 0;
+}
+
+.notification-alt-actions {
+    background: transparent;
+    padding: @spacingSmall@px;
+}
+
+.notification-action {
+    margin: @spacingSmall@px;
+    padding: 0;
+}
+
+.notification-action > button,
+.inline-reply-button,
+.inline-reply-entry {
+    background: var(--surface-alt);
+    border: @borderWidth@px solid var(--notification-border);
+    border-radius: @radiusSmall@px;
+    box-shadow: none;
+    color: var(--foreground);
+    padding: @spacingNormal@px;
+}
+
+.notification-group {
+    background: transparent;
+    transition: opacity @animationNormal@ms ease-out;
+}
+
+.notification-group .notification-group-headers,
+.notification-group .notification-group-buttons {
+    color: var(--foreground);
+    margin: 0 @spacingLarge@px;
+}
+
+.notification-group .notification-group-header {
+    color: var(--muted);
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+.control-center {
+    background: var(--control-center-background);
+    border: @borderWidth@px solid var(--notification-border);
+    border-radius: @radiusCard@px;
+    box-shadow: none;
+    color: var(--foreground);
+}
+
+.control-center .control-center-list,
+.control-center .notification-group,
+.control-center .notification-row {
+    background: transparent;
+}
+
+.control-center .notification {
+    background: var(--surface);
+    border: @borderWidth@px solid var(--notification-border);
+    border-radius: @radiusCard@px;
+    box-shadow: none;
+}
+
+.control-center-list-placeholder {
+    color: var(--muted);
+}
+
+.widget {
+    background: var(--surface);
+    border: @borderWidth@px solid var(--notification-border);
+    border-radius: @radiusCard@px;
+    box-shadow: none;
+    margin: @spacingNormal@px;
+    padding: @spacingNormal@px;
+}
+
+.widget-title > label {
+    color: var(--foreground);
+    font-size: 1.15em;
+    font-weight: 700;
+    margin-right: @spacingNormal@px;
+}
+
+.widget-title > button,
+.widget-dnd switch {
+    background: var(--surface-alt);
+    border: @borderWidth@px solid var(--notification-border);
+    border-radius: @radiusPill@px;
+    box-shadow: none;
+    color: var(--foreground);
+    padding: @spacingSmall@px @spacingNormal@px;
+}
+
+.widget-dnd label {
+    color: var(--foreground);
+    font-weight: 600;
+    margin-right: @spacingNormal@px;
+}
+
+.widget-dnd switch slider {
+    background: var(--muted);
+    border-radius: @radiusPill@px;
+}
+
+.widget-dnd switch:checked,
+.widget-dnd switch:checked slider {
+    background: var(--accent);
+}
+
+.widget-title > button:hover,
+.widget-title > button:focus,
+.widget-dnd switch:hover,
+.notification-action > button:hover,
+.inline-reply-button:hover,
+.close-button:hover {
+    background: var(--surface-hover);
+    color: var(--foreground);
+}
+
+scrollbar slider {
+    background: var(--muted);
+    border-radius: @radiusPill@px;
+    min-width: 4px;
+}

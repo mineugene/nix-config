@@ -1,0 +1,23 @@
+local stashes selected key entry
+stashes=$(git stash list --color=always) &&
+if [ -z "$stashes" ]; then
+    zle -M "No stashes"
+    return
+fi
+selected=$(echo "$stashes" | fzf --ansi --no-multi --no-sort \
+    --header 'enter: apply | ctrl-d: drop | ctrl-b: branch' \
+    --expect=ctrl-d,ctrl-b \
+    --preview 'echo {} | grep -o "stash@{[0-9]*}" | xargs git stash show -p --color=always' \
+    --preview-window 'right:60%') &&
+if [ -n "$selected" ]; then
+    key=$(echo "$selected" | head -1)
+    entry=$(echo "$selected" | tail -1 | grep -o 'stash@{[0-9]*}')
+    if [ -n "$entry" ]; then
+        case "$key" in
+            ctrl-d) git stash drop "$entry" ;;
+            ctrl-b) LBUFFER+="git stash branch ${entry}" ;;
+            *)      git stash apply "$entry" ;;
+        esac
+    fi
+fi
+[[ -n "$WIDGET" ]] && zle reset-prompt

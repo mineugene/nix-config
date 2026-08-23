@@ -1,0 +1,62 @@
+(defwidget network-detail [name value]
+  (box
+    :class "network-detail"
+    :orientation "horizontal"
+    :space-evenly false
+    (label
+      :class "network-detail-name"
+      :halign "start"
+      :hexpand true
+      :text {name})
+    (label
+      :class "network-detail-value"
+      :halign "end"
+      :text {value})))
+
+(defwidget network-popup-content []
+  (popup-frame :kind "network-popup"
+    (box
+      :class "network-dashboard"
+      :orientation "vertical"
+      :space-evenly false
+      :spacing @spacingNormal@
+      (label
+        :class "network-title"
+        :halign "start"
+        :text "Network")
+      (label
+        :class "network-connection"
+        :halign "start"
+        :text {network_state.name})
+      (network-detail
+        :name "Interface"
+        :value {network_state.interface == "" ? "Unavailable" : network_state.interface})
+      (network-detail
+        :name "Type"
+        :value {network_state.kind == "wifi" ? "Wi-Fi" : network_state.kind == "wired" ? "Wired" : network_state.connected ? "Connected" : "Unavailable"})
+      (network-detail
+        :name "Signal"
+        :value {(network_state.signal ?: -1) < 0 ? "Unavailable" : "${network_state.signal}%"})
+      (network-detail
+        :name "IPv4"
+        :value {network_state.ip == "" ? "Unavailable" : network_state.ip})
+      (network-detail
+        :name "Download"
+        :value {network_state.rx_bytes_per_second >= 1048576 ? "${round(network_state.rx_bytes_per_second / 1048576, 1)} MiB/s" : "${round(network_state.rx_bytes_per_second / 1024, 1)} KiB/s"})
+      (network-detail
+        :name "Upload"
+        :value {network_state.tx_bytes_per_second >= 1048576 ? "${round(network_state.tx_bytes_per_second / 1048576, 1)} MiB/s" : "${round(network_state.tx_bytes_per_second / 1024, 1)} KiB/s"}))))
+
+(defwindow network
+  :monitor 0
+  :geometry (geometry
+    :x "@popupRight@px"
+    :y "@popupTop@px"
+    :width "360px"
+    :height "300px"
+    :anchor "top right")
+  :stacking "overlay"
+  :exclusive false
+  :focusable "ondemand"
+  :namespace "eww-network"
+  (network-popup-content))

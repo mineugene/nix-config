@@ -1,0 +1,4 @@
+# Nix replaceVars template; Prettier rewrites @name@ placeholders.
+home/modules/hyprland/theme/tokens.scss
+home/modules/hyprland/swaync/style.css
+home/modules/hyprland/swaync/theme.css

@@ -1,0 +1,493 @@
+@import "./theme.scss";
+
+* {
+	font-family: $font-interface-family;
+	font-size: $font-interface-size;
+}
+
+window {
+	background-color: transparent;
+}
+
+button {
+	all: unset;
+}
+
+button,
+.workspace,
+.audio,
+.network {
+	transition:
+		background-color $animation-fast ease-out,
+		color $animation-fast ease-out;
+}
+
+.popup {
+	border: $border-width solid;
+	border-radius: $radius-card;
+	padding: $popup-padding;
+	font-family: $font-interface-family;
+	font-size: $font-interface-size;
+}
+
+.popup.dark {
+	background-color: $dark-surface;
+	border-color: $dark-border;
+	color: $dark-foreground;
+}
+
+.popup.light {
+	background-color: $light-surface;
+	border-color: $light-border;
+	color: $light-foreground;
+}
+
+.calendar-content,
+.calendar-grid {
+	min-width: 280px;
+}
+
+.calendar-grid {
+	padding-bottom: $spacing-normal;
+}
+
+.calendar-grid.header,
+.calendar-grid.highlight {
+	font-weight: 700;
+}
+
+.calendar-grid.button {
+	border-radius: $radius-small;
+	padding: $spacing-small;
+}
+
+.calendar-grid:selected {
+	border: $border-width solid;
+	border-radius: $radius-small;
+	font-weight: 700;
+}
+
+.popup.dark .calendar-grid.header,
+.popup.dark .calendar-grid.button {
+	color: $dark-accent;
+}
+
+.popup.dark .calendar-grid.button:hover {
+	background-color: $dark-surface-hover;
+}
+
+.popup.dark .calendar-grid:indeterminate {
+	color: $dark-muted;
+}
+
+.popup.dark .calendar-grid:selected {
+	background-color: $dark-accent;
+	border-color: $dark-foreground;
+	color: $dark-background;
+}
+
+.popup.light .calendar-grid.header,
+.popup.light .calendar-grid.button {
+	color: $light-accent;
+}
+
+.popup.light .calendar-grid.button:hover {
+	background-color: $light-surface-hover;
+}
+
+.popup.light .calendar-grid:indeterminate {
+	color: $light-muted;
+}
+
+.popup.light .calendar-grid:selected {
+	background-color: $light-accent;
+	border-color: $light-foreground;
+	color: $light-background;
+}
+
+.calendar-summary {
+	margin-top: $spacing-normal;
+	font-weight: 600;
+}
+
+.bar-layout {
+	background-color: transparent;
+	padding: 0 $bar-outer-margin;
+}
+
+.bar-section {
+	background-color: transparent;
+}
+
+.island {
+	border: $border-width solid;
+	border-radius: $radius-pill;
+	padding: 0 $spacing-normal;
+}
+
+.hardware-value,
+.hardware-detail-value,
+.network-detail-value,
+.audio-volume {
+	font-family: $font-monospace-family;
+	font-weight: 600;
+}
+
+.hardware-value {
+	min-width: 34px;
+}
+
+.hardware-value.warning,
+.hardware-progress.warning progress {
+	font-weight: 700;
+}
+
+.hardware-value.critical,
+.hardware-progress.critical progress {
+	font-weight: 700;
+}
+
+.hardware-value.unavailable {
+	font-weight: 500;
+}
+
+.hardware-dashboard {
+	min-width: 400px;
+}
+
+.hardware-title,
+.audio-title,
+.network-title {
+	font-size: 1.15em;
+	font-weight: 700;
+}
+
+.hardware-section,
+.audio-section {
+	border-top: $border-width solid;
+	padding-top: $spacing-normal;
+}
+
+.hardware-section-title,
+.audio-section-title,
+.network-connection {
+	font-weight: 700;
+}
+
+.hardware-detail-name,
+.network-detail-name {
+	font-weight: 500;
+}
+
+.hardware-progress trough,
+.hardware-progress progress,
+.audio-popup scale trough,
+.audio-popup scale highlight {
+	min-height: 6px;
+	border-radius: $radius-pill;
+}
+
+.audio-dashboard,
+.network-dashboard {
+	min-width: 300px;
+}
+
+.audio-control {
+	border-radius: $radius-pill;
+	padding: $spacing-small $spacing-normal;
+}
+
+.network-name {
+	font-weight: 600;
+}
+
+.tray {
+	min-height: 16px;
+}
+
+.workspace {
+	min-width: 18px;
+	min-height: 18px;
+	border: $border-width solid transparent;
+	border-radius: $radius-pill;
+}
+
+.workspace.empty {
+	background-color: transparent;
+}
+
+.workspace.occupied {
+	font-weight: 500;
+}
+
+.workspace.active {
+	font-weight: 700;
+}
+
+.workspace.urgent {
+	font-weight: 700;
+}
+
+.workspace.active.urgent {
+	font-weight: 700;
+}
+
+.window-title {
+	min-width: 0;
+}
+
+.notifications {
+	border-radius: $radius-pill;
+}
+
+.notifications-center,
+.notifications-dismiss-all {
+	border-radius: $radius-pill;
+	padding: 0 $spacing-small;
+}
+
+.notifications.empty {
+	font-weight: 500;
+}
+
+.notifications.unread {
+	font-weight: 700;
+}
+
+.notifications.dnd {
+	font-weight: 700;
+}
+
+.notification-count {
+	font-family: $font-monospace-family;
+	font-weight: 700;
+}
+
+.network {
+	min-width: 18px;
+}
+
+.audio.muted,
+.audio.unavailable {
+	font-weight: 500;
+}
+
+.theme {
+	border-radius: $radius-pill;
+}
+
+@mixin bar-theme(
+	$background-color,
+	$surface-color,
+	$surface-alt-color,
+	$surface-hover-color,
+	$foreground-color,
+	$muted-color,
+	$accent-color,
+	$accent-alt-color,
+	$red-color,
+	$yellow-color,
+	$border-color
+) {
+	color: $foreground-color;
+
+	.island {
+		background-color: $surface-color;
+		border-color: $border-color;
+	}
+
+	.hardware:hover,
+	.notifications-center:hover,
+	.notifications-dismiss-all:hover {
+		background-color: $surface-hover-color;
+		color: $foreground-color;
+	}
+
+	.hardware-value.warning,
+	.network.connecting {
+		color: $yellow-color;
+	}
+
+	.hardware-value.critical {
+		color: $red-color;
+	}
+
+	.hardware-value.unavailable,
+	.notifications.empty,
+	.notifications-dismiss-all,
+	.network.disconnected,
+	.network.unavailable,
+	.audio.muted,
+	.audio.unavailable {
+		color: $muted-color;
+	}
+
+	.workspace {
+		background-color: $surface-alt-color;
+		color: $muted-color;
+	}
+
+	.workspace.empty {
+		background-color: transparent;
+		border-color: $border-color;
+	}
+
+	.workspace.occupied,
+	.workspace:hover {
+		background-color: $surface-hover-color;
+		color: $foreground-color;
+	}
+
+	.workspace.active {
+		background-color: $accent-color;
+		color: $background-color;
+	}
+
+	.workspace.urgent {
+		border-color: $red-color;
+		color: $red-color;
+	}
+
+	.workspace.active.urgent {
+		background-color: $red-color;
+		color: $background-color;
+	}
+
+	.notifications.unread,
+	.theme:hover {
+		color: $accent-color;
+	}
+
+	.notifications.dnd,
+	.theme.dark {
+		color: $accent-alt-color;
+	}
+
+	.network,
+	.audio,
+	.theme {
+		color: $foreground-color;
+	}
+
+	.theme.light {
+		color: $yellow-color;
+	}
+}
+
+.bar-layout.dark {
+	@include bar-theme(
+		$dark-background,
+		$dark-surface,
+		$dark-surface-alt,
+		$dark-surface-hover,
+		$dark-foreground,
+		$dark-muted,
+		$dark-accent,
+		$dark-accent-alt,
+		$dark-red,
+		$dark-yellow,
+		$dark-border
+	);
+}
+
+.bar-layout.light {
+	@include bar-theme(
+		$light-background,
+		$light-surface,
+		$light-surface-alt,
+		$light-surface-hover,
+		$light-foreground,
+		$light-muted,
+		$light-accent,
+		$light-accent-alt,
+		$light-red,
+		$light-yellow,
+		$light-border
+	);
+}
+
+.popup.dark .hardware-section,
+.popup.dark .audio-section {
+	border-color: $dark-border;
+}
+
+.popup.dark .hardware-section-title,
+.popup.dark .audio-section-title,
+.popup.dark .network-connection {
+	color: $dark-accent;
+}
+
+.popup.dark .hardware-detail-name,
+.popup.dark .network-detail-name,
+.popup.dark .audio-control.muted {
+	color: $dark-muted;
+}
+
+.popup.dark .hardware-progress trough,
+.popup.dark.audio-popup scale trough {
+	background-color: $dark-surface-hover;
+}
+
+.popup.dark .hardware-progress progress,
+.popup.dark.audio-popup scale highlight {
+	background-color: $dark-accent;
+}
+
+.popup.dark .audio-control {
+	background-color: $dark-surface-alt;
+}
+
+.popup.dark .audio-control:hover {
+	background-color: $dark-surface-hover;
+}
+
+.popup.light .hardware-section,
+.popup.light .audio-section {
+	border-color: $light-border;
+}
+
+.popup.light .hardware-section-title,
+.popup.light .audio-section-title,
+.popup.light .network-connection {
+	color: $light-accent;
+}
+
+.popup.light .hardware-detail-name,
+.popup.light .network-detail-name,
+.popup.light .audio-control.muted {
+	color: $light-muted;
+}
+
+.popup.light .hardware-progress trough,
+.popup.light.audio-popup scale trough {
+	background-color: $light-surface-hover;
+}
+
+.popup.light .hardware-progress progress,
+.popup.light.audio-popup scale highlight {
+	background-color: $light-accent;
+}
+
+.popup.light .audio-control {
+	background-color: $light-surface-alt;
+}
+
+.popup.light .audio-control:hover {
+	background-color: $light-surface-hover;
+}
+
+.popup.dark .hardware-progress.warning progress {
+	background-color: $dark-yellow;
+}
+
+.popup.light .hardware-progress.warning progress {
+	background-color: $light-yellow;
+}
+
+.popup.dark .hardware-progress.critical progress {
+	background-color: $dark-red;
+}
+
+.popup.light .hardware-progress.critical progress {
+	background-color: $light-red;
+}

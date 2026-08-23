@@ -1,0 +1,9 @@
+(defpoll clock_text
+  :interval "60s"
+  `@date@ "+%a %b %d  %H:%M"`)
+
+(defwidget clock []
+  (button
+    :class "island clock"
+    :onclick "@popupToggle@ calendar"
+    (label :text {clock_text})))

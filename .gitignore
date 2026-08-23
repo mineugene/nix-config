@@ -1,0 +1,8 @@
+.claude/
+.direnv/
+.env
+.env.*
+.pre-commit-config.yaml
+result
+result-*
+graphify-out/

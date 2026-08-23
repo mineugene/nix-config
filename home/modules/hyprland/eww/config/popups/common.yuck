@@ -1,0 +1,6 @@
+(defwidget popup-frame [kind]
+  (box
+    :class "popup ${kind} ${theme_mode}"
+    :orientation "vertical"
+    :space-evenly false
+    (children)))

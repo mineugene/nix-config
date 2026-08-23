@@ -1,0 +1,25 @@
+(deflisten hardware_status
+  :initial `{"cpu":{"usage":null,"temp_c":null,"load1":null,"frequency_mhz":null},"gpu":{"index":null,"usage":null,"vram_used_mib":null,"vram_total_mib":null,"temp_c":null,"power_w":null},"memory":{"usage":null,"used_gib":null,"total_gib":null},"display":{"name":null,"width":null,"height":null,"refresh_hz":null,"bit_depth":null,"color_management_mode":null,"automatic_hdr":null,"vrr":null},"uptime_seconds":null}`
+  `@hardwareStatus@`)
+
+(defwidget hardware []
+  (button
+    :class "island hardware"
+    :onclick "@popupToggle@ hardware"
+    :tooltip "Open hardware dashboard"
+    (box
+      :orientation "horizontal"
+      :space-evenly false
+      :spacing @spacingSmall@
+      (label :text "CPU")
+      (label
+        :class {(hardware_status.cpu.usage ?: -1) < 0 ? "hardware-value unavailable" : hardware_status.cpu.usage >= 90 ? "hardware-value critical" : hardware_status.cpu.usage >= 75 ? "hardware-value warning" : "hardware-value"}
+        :text {(hardware_status.cpu.usage ?: -1) < 0 ? "--%" : "${round(hardware_status.cpu.usage, 0)}%"})
+      (label :text "GPU")
+      (label
+        :class {(hardware_status.gpu.usage ?: -1) < 0 ? "hardware-value unavailable" : hardware_status.gpu.usage >= 90 ? "hardware-value critical" : hardware_status.gpu.usage >= 75 ? "hardware-value warning" : "hardware-value"}
+        :text {(hardware_status.gpu.usage ?: -1) < 0 ? "--%" : "${round(hardware_status.gpu.usage, 0)}%"})
+      (label :text "MEM")
+      (label
+        :class {(hardware_status.memory.usage ?: -1) < 0 ? "hardware-value unavailable" : hardware_status.memory.usage >= 90 ? "hardware-value critical" : hardware_status.memory.usage >= 75 ? "hardware-value warning" : "hardware-value"}
+        :text {(hardware_status.memory.usage ?: -1) < 0 ? "--%" : "${round(hardware_status.memory.usage, 0)}%"}))))

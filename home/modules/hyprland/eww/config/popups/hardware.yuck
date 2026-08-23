@@ -1,0 +1,156 @@
+(defwidget hardware-detail [name value]
+  (box
+    :class "hardware-detail"
+    :orientation "horizontal"
+    :space-evenly false
+    (label
+      :class "hardware-detail-name"
+      :halign "start"
+      :hexpand true
+      :text {name})
+    (label
+      :class "hardware-detail-value"
+      :halign "end"
+      :text {value})))
+
+(defwidget hardware-meter [name value percent state]
+  (box
+    :class "hardware-meter"
+    :orientation "vertical"
+    :space-evenly false
+    :spacing @spacingSmall@
+    (hardware-detail
+      :name {name}
+      :value {value})
+    (progress
+      :class "hardware-progress ${state}"
+      :orientation "horizontal"
+      :value {percent})))
+
+(defwidget hardware-popup-content []
+  (popup-frame :kind "hardware-popup"
+    (box
+      :class "hardware-dashboard"
+      :orientation "vertical"
+      :space-evenly false
+      :spacing @spacingNormal@
+      (label
+        :class "hardware-title"
+        :halign "start"
+        :text "Hardware")
+      (box
+        :class "hardware-section"
+        :orientation "vertical"
+        :space-evenly false
+        :spacing @spacingSmall@
+        (label
+          :class "hardware-section-title"
+          :halign "start"
+          :text "CPU")
+        (hardware-meter
+          :name "Utilization"
+          :value {(hardware_status.cpu.usage ?: -1) < 0 ? "Unavailable" : "${round(hardware_status.cpu.usage, 0)}%"}
+          :percent {hardware_status.cpu.usage ?: 0}
+          :state {(hardware_status.cpu.usage ?: -1) < 0 ? "unavailable" : hardware_status.cpu.usage >= 90 ? "critical" : hardware_status.cpu.usage >= 75 ? "warning" : "normal"})
+        (hardware-detail
+          :name "Temperature"
+          :value {(hardware_status.cpu.temp_c ?: -1000) < -999 ? "Unavailable" : "${round(hardware_status.cpu.temp_c, 1)} °C"})
+        (hardware-detail
+          :name "Load (1 min)"
+          :value {(hardware_status.cpu.load1 ?: -1) < 0 ? "Unavailable" : "${round(hardware_status.cpu.load1, 2)}"})
+        (hardware-detail
+          :name "Frequency"
+          :value {(hardware_status.cpu.frequency_mhz ?: -1) < 0 ? "Unavailable" : "${round(hardware_status.cpu.frequency_mhz, 0)} MHz"}))
+      (box
+        :class "hardware-section"
+        :orientation "vertical"
+        :space-evenly false
+        :spacing @spacingSmall@
+        (label
+          :class "hardware-section-title"
+          :halign "start"
+          :text "GPU")
+        (hardware-meter
+          :name "Utilization"
+          :value {(hardware_status.gpu.usage ?: -1) < 0 ? "Unavailable" : "${round(hardware_status.gpu.usage, 0)}%"}
+          :percent {hardware_status.gpu.usage ?: 0}
+          :state {(hardware_status.gpu.usage ?: -1) < 0 ? "unavailable" : hardware_status.gpu.usage >= 90 ? "critical" : hardware_status.gpu.usage >= 75 ? "warning" : "normal"})
+        (hardware-detail
+          :name "Temperature"
+          :value {(hardware_status.gpu.temp_c ?: -1000) < -999 ? "Unavailable" : "${round(hardware_status.gpu.temp_c, 1)} °C"})
+        (hardware-detail
+          :name "VRAM"
+          :value {(hardware_status.gpu.vram_used_mib ?: -1) < 0 || (hardware_status.gpu.vram_total_mib ?: -1) < 0 ? "Unavailable" : "${round(hardware_status.gpu.vram_used_mib / 1024, 1)} / ${round(hardware_status.gpu.vram_total_mib / 1024, 1)} GiB"})
+        (hardware-detail
+          :name "Power"
+          :value {(hardware_status.gpu.power_w ?: -1) < 0 ? "Unavailable" : "${round(hardware_status.gpu.power_w, 1)} W"}))
+      (box
+        :class "hardware-section"
+        :orientation "vertical"
+        :space-evenly false
+        :spacing @spacingSmall@
+        (label
+          :class "hardware-section-title"
+          :halign "start"
+          :text "Memory")
+        (hardware-meter
+          :name "Utilization"
+          :value {(hardware_status.memory.usage ?: -1) < 0 ? "Unavailable" : "${round(hardware_status.memory.usage, 0)}%"}
+          :percent {hardware_status.memory.usage ?: 0}
+          :state {(hardware_status.memory.usage ?: -1) < 0 ? "unavailable" : hardware_status.memory.usage >= 90 ? "critical" : hardware_status.memory.usage >= 75 ? "warning" : "normal"})
+        (hardware-detail
+          :name "Used / total"
+          :value {(hardware_status.memory.used_gib ?: -1) < 0 || (hardware_status.memory.total_gib ?: -1) < 0 ? "Unavailable" : "${round(hardware_status.memory.used_gib, 1)} / ${round(hardware_status.memory.total_gib, 1)} GiB"}))
+      (box
+        :class "hardware-section"
+        :orientation "vertical"
+        :space-evenly false
+        :spacing @spacingSmall@
+        (label
+          :class "hardware-section-title"
+          :halign "start"
+          :text "Display")
+        (hardware-detail
+          :name "Output"
+          :value {hardware_status.display.name ?: "Unavailable"})
+        (hardware-detail
+          :name "Mode"
+          :value {(hardware_status.display.width ?: -1) < 0 || (hardware_status.display.height ?: -1) < 0 || (hardware_status.display.refresh_hz ?: -1) < 0 ? "Unavailable" : "${hardware_status.display.width} × ${hardware_status.display.height} @ ${round(hardware_status.display.refresh_hz, 2)} Hz"})
+        (hardware-detail
+          :name "Bit depth"
+          :value {(hardware_status.display.bit_depth ?: -1) < 0 ? "Unavailable" : "${hardware_status.display.bit_depth}-bit"})
+        (hardware-detail
+          :name "Color management"
+          :value {hardware_status.display.color_management_mode ?: "Unavailable"})
+        (hardware-detail
+          :name "Automatic HDR"
+          :value {(hardware_status.display.automatic_hdr ?: -1) < 0 ? "Unavailable" : hardware_status.display.automatic_hdr == 1 ? "Enabled" : "Disabled"})
+        (hardware-detail
+          :name "VRR"
+          :value {hardware_status.display.vrr == true ? "Enabled" : hardware_status.display.vrr == false ? "Disabled" : "Unavailable"}))
+      (box
+        :class "hardware-section uptime-section"
+        :orientation "vertical"
+        :space-evenly false
+        :spacing @spacingSmall@
+        (label
+          :class "hardware-section-title"
+          :halign "start"
+          :text "Uptime")
+        (hardware-detail
+          :name "Running"
+          :value {(hardware_status.uptime_seconds ?: -1) < 0 ? "Unavailable" : hardware_status.uptime_seconds >= 86400 ? "${floor(hardware_status.uptime_seconds / 86400)}d ${floor((hardware_status.uptime_seconds % 86400) / 3600)}h" : hardware_status.uptime_seconds >= 3600 ? "${floor(hardware_status.uptime_seconds / 3600)}h ${floor((hardware_status.uptime_seconds % 3600) / 60)}m" : "${floor(hardware_status.uptime_seconds / 60)}m"})))))
+
+(defwindow hardware
+  :monitor 0
+  :geometry (geometry
+    :x "0px"
+    :y "@popupTop@px"
+    :width "440px"
+    :height "720px"
+    :anchor "top center")
+  :stacking "overlay"
+  :exclusive false
+  :focusable "ondemand"
+  :namespace "eww-hardware"
+  (hardware-popup-content))

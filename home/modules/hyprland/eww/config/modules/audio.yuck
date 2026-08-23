@@ -1,0 +1,23 @@
+(defpoll audio_status
+  :interval "2s"
+  :initial `{"available":false,"sink":{"available":false,"muted":false,"volume":0,"description":"Unavailable"},"source":{"available":false,"muted":false,"volume":0,"description":"Unavailable"}}`
+  `@audio@ status`)
+
+(defwidget audio []
+  (eventbox
+    :class `audio ${audio_status.available ? "" : "unavailable"} ${audio_status.sink.muted ? "muted" : ""}`
+    :cursor "pointer"
+    :tooltip {audio_status.available ? audio_status.sink.muted ? "Output muted" : `Output ${audio_status.sink.volume}% — ${audio_status.sink.description}` : "Audio status unavailable"}
+    :onclick "@popupToggle@ audio"
+    :onmiddleclick "@audio@ toggle-sink"
+    :onscroll "@audio@ change-sink {}"
+    (box
+      :orientation "horizontal"
+      :space-evenly false
+      :spacing @spacingSmall@
+      (label
+        :text {audio_status.available ? audio_status.sink.muted ? "󰝟" : audio_status.sink.volume >= 67 ? "󰕾" : audio_status.sink.volume >= 34 ? "󰖀" : "󰕿" : "󰖁"})
+      (label
+        :class "audio-volume"
+        :visible {audio_status.available}
+        :text `${audio_status.sink.volume}%`))))

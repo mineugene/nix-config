@@ -1,0 +1,71 @@
+local selected session_name dir git_root
+
+selected=$(
+    {
+        tmux list-sessions -F "#{session_name}: #{session_path} (#{session_windows} windows)" 2>/dev/null
+        command fd --type directory --max-depth 3 --hidden . "$HOME"
+    } | fzf --no-multi \
+        --header 'enter: switch/attach | alt-enter: new session' \
+        --color header:italic \
+        --expect=alt-enter \
+        --preview 'dir="{}";
+            if [[ "$dir" == *": "* ]] && [[ "$dir" == *" ("*" windows)" ]]; then
+                dir=$(echo "$dir" | sed "s/^[^:]*: //; s/ ([0-9]* windows)$//")
+            fi;
+            git -C "$dir" log --oneline --color=always -8 2>/dev/null;
+            echo "---";
+            lsd --tree --depth=2 --color=always "$dir" 2>/dev/null || ls -la "$dir"' \
+        --preview-window 'right:50%' \
+        --bind 'ctrl-/:change-preview-window(down|hidden|)'
+)
+
+[[ -z "$selected" ]] && { [[ -n "$WIDGET" ]] && zle reset-prompt; return; }
+
+local key=$(echo "$selected" | head -1)
+local choice=$(echo "$selected" | tail -1)
+
+# Determine directory and session name
+if [[ "$choice" == *": "* ]] && [[ "$choice" == *" ("*" windows)" ]]; then
+    # Existing session selected
+    session_name="${choice%%:*}"
+    dir=$(echo "$choice" | sed 's/^[^:]*: //; s/ ([0-9]* windows)$//')
+else
+    # Directory selected
+    dir="$choice"
+    git_root=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null)
+    if [[ -n "$git_root" ]]; then
+        session_name="${git_root:t}"
+        dir="$git_root"
+    else
+        session_name="${dir:t}"
+    fi
+    session_name="${session_name//[.:]/_}"
+fi
+
+# ctrl-n: force new session with incrementing suffix
+if [[ "$key" == "alt-enter" ]]; then
+    local n=1
+    while tmux has-session -t "${session_name}-${n}" 2>/dev/null; do
+        ((n++))
+    done
+    session_name="${session_name}-${n}"
+    tmux new-session -d -s "$session_name" -c "$dir"
+fi
+
+# Switch or attach
+if tmux has-session -t "$session_name" 2>/dev/null; then
+    if [[ -n "$TMUX" ]]; then
+        tmux switch-client -t "$session_name"
+    else
+        tmux attach-session -t "$session_name"
+    fi
+else
+    tmux new-session -d -s "$session_name" -c "$dir"
+    if [[ -n "$TMUX" ]]; then
+        tmux switch-client -t "$session_name"
+    else
+        tmux attach-session -t "$session_name"
+    fi
+fi
+
+[[ -n "$WIDGET" ]] && zle reset-prompt

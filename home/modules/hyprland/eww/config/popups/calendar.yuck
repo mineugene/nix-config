@@ -1,0 +1,33 @@
+(defpoll calendar_summary
+  :interval "60s"
+  `@date@ "+%A, %B %-d · %H:%M"`)
+
+(defwidget calendar-popup-content []
+  (popup-frame :kind "calendar-popup"
+    (box
+      :class "calendar-content"
+      :orientation "vertical"
+      :space-evenly false
+      (calendar
+        :class "calendar-grid"
+        :show-details false
+        :show-heading true
+        :show-day-names true
+        :show-week-numbers false)
+      (label
+        :class "calendar-summary"
+        :text {calendar_summary}))))
+
+(defwindow calendar
+  :monitor 0
+  :geometry (geometry
+    :x "0px"
+    :y "@popupTop@px"
+    :width "320px"
+    :height "330px"
+    :anchor "top center")
+  :stacking "overlay"
+  :exclusive false
+  :focusable "ondemand"
+  :namespace "eww-calendar"
+  (calendar-popup-content))

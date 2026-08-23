@@ -1,0 +1,45 @@
+(defwidget bar-content []
+  (centerbox
+    :class `bar-layout ${theme_mode}`
+    :orientation "horizontal"
+    (box
+      :class "bar-section bar-left"
+      :orientation "horizontal"
+      :halign "start"
+      :spacing @spacingNormal@
+      (workspaces)
+      (active-window))
+    (box
+      :class "bar-section bar-center"
+      :halign "center"
+      (clock))
+    (box
+      :class "bar-section bar-right"
+      :orientation "horizontal"
+      :halign "end"
+      :spacing @spacingNormal@
+      (hardware)
+      (box
+        :class "island status-island"
+        :orientation "horizontal"
+        :space-evenly false
+        :spacing @spacingNormal@
+        (notifications)
+        (network)
+        (audio)
+        (tray)
+        (theme)))))
+
+(defwindow bar
+  :monitor 0
+  :geometry (geometry
+    :x "0px"
+    :y "@barOuterMargin@px"
+    :width "100%"
+    :height "@barHeight@px"
+    :anchor "top center")
+  :stacking "fg"
+  :exclusive true
+  :focusable "none"
+  :namespace "eww-bar"
+  (bar-content))

@@ -1,0 +1,96 @@
+* {
+    font: @font-interface;
+    text-color: @foreground;
+    background-color: transparent;
+}
+
+window {
+    transparency: "real";
+    background-color: @surface-translucent;
+    border: @border-width;
+    border-color: @border;
+    border-radius: @radius-card;
+    location: north;
+    anchor: north;
+    y-offset: 40%;
+    width: 92%;
+}
+
+mainbox {
+    padding: @popup-padding;
+    spacing: @spacing-normal;
+    children: [ inputbar, message, listview ];
+}
+
+inputbar {
+    padding: @spacing-normal;
+    spacing: @spacing-normal;
+    border: @border-width;
+    border-color: @border;
+    border-radius: @radius-pill;
+    children: [ prompt, entry ];
+}
+
+prompt {
+    text-color: @accent;
+}
+
+entry {
+    placeholder: "Type to search";
+    placeholder-color: @muted;
+}
+
+message {
+    padding: @spacing-normal;
+    border-radius: @radius-small;
+}
+
+textbox {
+    text-color: @foreground;
+}
+
+listview {
+    spacing: @spacing-small;
+    scrollbar: false;
+    fixed-height: false;
+}
+
+element {
+    padding: @spacing-normal;
+    spacing: @spacing-normal;
+    border-radius: @radius-small;
+}
+
+element selected {
+    background-color: @accent;
+    text-color: @background;
+}
+
+element-text {
+    background-color: inherit;
+    text-color: inherit;
+    vertical-align: 0.5;
+}
+
+element-icon {
+    size: 1.6em;
+    vertical-align: 0.5;
+}
+
+@media ( min-width: 700 px ) {
+    window {
+        width: 640px;
+    }
+}
+
+@media ( min-width: 1440 px ) {
+    window {
+        width: 720px;
+    }
+}
+
+@media ( min-width: 2560 px ) {
+    window {
+        width: 840px;
+    }
+}

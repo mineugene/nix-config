@@ -1,0 +1,10 @@
+(deflisten theme_mode
+  :initial "@defaultMode@"
+  `@themeListener@`)
+
+(defwidget theme []
+  (button
+    :class `theme ${theme_mode}`
+    :tooltip {theme_mode == "dark" ? "Dark theme — switch to light" : "Light theme — switch to dark"}
+    :onclick "@desktopTheme@ toggle"
+    (label :text {theme_mode == "dark" ? "󰖔" : "󰖙"})))
