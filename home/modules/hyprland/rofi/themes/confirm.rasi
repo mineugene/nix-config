@@ -1,0 +1,21 @@
+mainbox {
+    children: [ message, listview ];
+}
+
+message {
+    padding: @spacing-normal;
+}
+
+message textbox {
+    horizontal-align: 0.5;
+    markup: false;
+}
+
+listview {
+    lines: 2;
+    fixed-height: true;
+}
+
+element-text {
+    horizontal-align: 0.5;
+}

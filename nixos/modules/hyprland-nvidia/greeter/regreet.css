@@ -1,0 +1,27 @@
+* {
+    font-size: 13px;
+}
+
+window {
+    background-color: #000000;
+    color: @foreground@;
+}
+
+overlay > frame.background:nth-child(2) {
+    background-color: @surface@;
+    border: 1px solid @border@;
+    border-radius: 6px;
+}
+
+overlay > frame.background:nth-child(3) {
+    opacity: 0;
+}
+
+button {
+    border-radius: 4px;
+}
+
+button.suggested-action {
+    background-color: @accent@;
+    color: @background@;
+}

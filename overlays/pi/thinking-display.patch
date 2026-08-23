@@ -1,0 +1,100 @@
+diff --git a/packages/coding-agent/src/modes/interactive/components/assistant-message.ts b/packages/coding-agent/src/modes/interactive/components/assistant-message.ts
+index c02e371..8f6661f 100644
+--- a/packages/coding-agent/src/modes/interactive/components/assistant-message.ts
++++ b/packages/coding-agent/src/modes/interactive/components/assistant-message.ts
+@@ -95,8 +95,13 @@ export class AssistantMessageComponent extends Container {
+ 		// Clear content container
+ 		this.contentContainer.clear();
+ 
++		// Suppressed thinking (hidden with an empty label) renders nothing, so it
++		// must not count toward visible content or force a leading blank row.
++		const thinkingSuppressed = this.hideThinkingBlock && !this.hiddenThinkingLabel;
+ 		const hasVisibleContent = message.content.some(
+-			(c) => (c.type === "text" && c.text.trim()) || (c.type === "thinking" && c.thinking.trim()),
++			(c) =>
++				(c.type === "text" && c.text.trim()) ||
++				(c.type === "thinking" && c.thinking.trim() && !thinkingSuppressed),
+ 		);
+ 
+ 		if (hasVisibleContent) {
+@@ -160,16 +165,19 @@ export class AssistantMessageComponent extends Container {
+ 								),
+ 							},
+ 						);
+-				this.contentContainer.addChild(
+-					new MouseRegion(thinkingComponent, (event) => {
+-						if (event.type !== "click" || event.button !== "left") return undefined;
+-						this.thinkingVisibilityOverrides.set(runIndex, !hidden);
+-						if (this.lastMessage) this.updateContent(this.lastMessage);
+-						return { handled: true };
+-					}),
+-				);
+-				if (hasVisibleContentAfter) {
+-					this.contentContainer.addChild(new Spacer(1));
++				// An empty hidden label means thinking is suppressed entirely, so render nothing.
++				if (!hidden || this.hiddenThinkingLabel) {
++					this.contentContainer.addChild(
++						new MouseRegion(thinkingComponent, (event) => {
++							if (event.type !== "click" || event.button !== "left") return undefined;
++							this.thinkingVisibilityOverrides.set(runIndex, !hidden);
++							if (this.lastMessage) this.updateContent(this.lastMessage);
++							return { handled: true };
++						}),
++					);
++					if (hasVisibleContentAfter) {
++						this.contentContainer.addChild(new Spacer(1));
++					}
+ 				}
+ 			}
+ 		}
+diff --git a/packages/coding-agent/test/assistant-message.test.ts b/packages/coding-agent/test/assistant-message.test.ts
+index ea2618a..8998fcf 100644
+--- a/packages/coding-agent/test/assistant-message.test.ts
++++ b/packages/coding-agent/test/assistant-message.test.ts
+@@ -127,6 +127,46 @@ describe("AssistantMessageComponent", () => {
+ 		expect(collapsed).toContain("second reasoning");
+ 	});
+ 
++	test("keeps one blank row before answers when the hidden thinking label is empty", () => {
++		initTheme("dark");
++		const thinkingAndText: AssistantMessage["content"] = [
++			{ type: "thinking", thinking: "private reasoning" },
++			{ type: "text", text: "answer" },
++		];
++		const components = [
++			new AssistantMessageComponent(createAssistantMessage(thinkingAndText), true, undefined, ""),
++			new AssistantMessageComponent(
++				createAssistantMessage([{ type: "text", text: "answer" }]),
++				true,
++				undefined,
++				"",
++			),
++			new AssistantMessageComponent(createAssistantMessage(thinkingAndText), false, undefined, ""),
++		];
++
++		for (const component of components) {
++			const lines = component.render(80).map((line) => stripAnsi(line));
++			const answerIndex = lines.findIndex((line) => line.includes("answer"));
++			expect(answerIndex).toBeGreaterThan(0);
++			expect(lines[answerIndex - 1]?.trim()).toBe("");
++			expect(lines[answerIndex - 2]?.trim()).not.toBe("");
++		}
++	});
++
++	test("renders nothing for suppressed thinking without trailing text", () => {
++		initTheme("dark");
++		const thinkingOnly = createAssistantMessage([{ type: "thinking", thinking: "private reasoning" }]);
++		const thinkingAndToolCall = createAssistantMessage([
++			{ type: "thinking", thinking: "private reasoning" },
++			{ type: "toolCall", id: "tool-1", name: "read", arguments: { path: "file.txt" } },
++		]);
++
++		for (const message of [thinkingOnly, thinkingAndToolCall]) {
++			const component = new AssistantMessageComponent(message, true, undefined, "");
++			expect(component.render(80)).toEqual([]);
++		}
++	});
++
+ 	test("uses configured output padding for text and thinking", () => {
+ 		initTheme("dark");
+ 

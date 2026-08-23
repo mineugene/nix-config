@@ -1,0 +1,40 @@
+(defwidget network-popup-content []
+  (popup-frame :kind "network-popup"
+    (box
+      :class "network-dashboard"
+      :orientation "vertical"
+      :space-evenly false
+      :spacing @spacingNormal@
+      (popup-title :text "Network")
+      (popup-section :title {network_state.primary.name}
+        (popup-detail
+          :name "Interface"
+          :value {network_state.primary.interface == "" ? "Unavailable" : network_state.primary.interface})
+        (popup-detail
+          :name "Type"
+          :value {network_state.primary.kind == "wifi" ? "Wi-Fi" : network_state.primary.kind == "wired" ? "Wired" : network_state.primary.connected ? "Connected" : "Unavailable"})
+        (popup-detail
+          :name "Signal"
+          :value {(network_state.primary.signal ?: -1) < 0 ? "Unavailable" : "${network_state.primary.signal}%"})
+        (popup-detail
+          :name "IPv4"
+          :value {network_state.primary.ip == "" ? "Unavailable" : network_state.primary.ip})
+        (popup-detail
+          :name "Download"
+          :value {network_state.primary.rx_bytes_per_second >= 1048576 ? "${round(network_state.primary.rx_bytes_per_second / 1048576, 1)} MiB/s" : "${round(network_state.primary.rx_bytes_per_second / 1024, 1)} KiB/s"})
+        (popup-detail
+          :name "Upload"
+          :value {network_state.primary.tx_bytes_per_second >= 1048576 ? "${round(network_state.primary.tx_bytes_per_second / 1048576, 1)} MiB/s" : "${round(network_state.primary.tx_bytes_per_second / 1024, 1)} KiB/s"})))))
+
+(defwindow network
+  :monitor 0
+  :geometry (geometry
+    :x "0px"
+    :y "@popupTop@px"
+    :width "@popupWidth@px"
+    :anchor "top right")
+  :stacking "overlay"
+  :exclusive false
+  :focusable "none"
+  :namespace "eww-network"
+  (network-popup-content))

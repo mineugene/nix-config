@@ -1,0 +1,37 @@
+local cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/cht.sh"
+local cache_file="$cache_dir/list"
+mkdir -p "$cache_dir"
+
+if [[ ! -s "$cache_file" ]] || [[ -n "$(find "$cache_file" -mtime +7 2>/dev/null)" ]]; then
+    if ! curl -fsS --connect-timeout 5 'https://cht.sh/:list' -o "$cache_file" 2>/dev/null; then
+        zle -M "cht.sh: failed to fetch sheet list; free-text query still works"
+        : > "$cache_file"
+    fi
+fi
+
+local fzf_out
+fzf_out=$(
+    FZF_DEFAULT_OPTS="$FZF_DEFAULT_OPTS --print-query --no-multi \
+        --header 'cht.sh: pick sheet or type free-form query (lang/topic), Enter to run' \
+        --color header:italic" \
+    fzf < "$cache_file"
+)
+
+local query selected path
+query=$(print -r -- "$fzf_out" | sed -n 1p)
+selected=$(print -r -- "$fzf_out" | sed -n 2p)
+
+if [[ -n "$selected" ]]; then
+    path="$selected"
+elif [[ -n "$query" ]]; then
+    path="$query"
+else
+    zle reset-prompt
+    return 0
+fi
+
+path="${path// /+}"
+
+zle push-line
+BUFFER="curl -s 'https://cht.sh/${path}' | ${PAGER:-less} -R"
+zle accept-line

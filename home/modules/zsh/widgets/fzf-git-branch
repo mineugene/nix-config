@@ -1,0 +1,18 @@
+local branches branch result
+branches=$(git --no-pager branch -vv) &&
+branch=$(echo "$branches" | fzf --no-multi \
+    --header 'enter: switch | ctrl-d: delete' \
+    --expect=ctrl-d) &&
+if [ -n "$branch" ]; then
+    local key=$(echo "$branch" | head -1)
+    local selected=$(echo "$branch" | tail -1 | sed 's/^[* ]*//' | awk '{print $1}')
+    if [[ "$key" == "ctrl-d" ]]; then
+        result=$(git branch -d "$selected" 2>&1)
+        if [[ $? -ne 0 ]]; then
+            LBUFFER+="git branch -D ${selected}"
+        fi
+    else
+        git switch "$selected"
+    fi
+fi
+[[ -n "$WIDGET" ]] && zle reset-prompt

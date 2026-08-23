@@ -1,0 +1,14 @@
+local files file
+files=$(git diff --name-only) &&
+if [ -z "$files" ]; then
+    zle -M "No unstaged changes"
+    return
+fi
+file=$(echo "$files" | fzf --no-multi \
+    --preview 'git diff --color=always -- {}' \
+    --preview-window 'right:60%' \
+    --header 'enter: stage hunks interactively') &&
+if [ -n "$file" ]; then
+    git add --patch -- "$file" </dev/tty
+fi
+[[ -n "$WIDGET" ]] && zle reset-prompt

@@ -1,0 +1,63 @@
+;; PipeWire-pulse events drive the refresh, so a hardware mute or knob
+;; turn shows on the next event instead of the next poll.
+(deflisten audio_status
+  :initial `@audioInitial@`
+  `@audio@ listen`)
+
+;; OpenXLR owns the monitor route and the enforced default, so the popup reads
+;; both from one daemon query. The poll runs only while the popup it feeds is
+;; open; closed, the initial degraded state stands in.
+(defpoll monitor_status
+  :interval "2s"
+  :initial `@monitorInitial@`
+  :run-while {open_popup == "audio"}
+  `@audio@ monitor-status`)
+
+(defwidget audio []
+  (eventbox
+    :class `audio ${audio_status.available ? "" : "unavailable"} ${audio_status.sink.muted ? "muted" : ""}`
+    :cursor "pointer"
+    :tooltip {open_popup == "audio" || open_popup == "audio-output" ? "" : !audio_status.available ? "Audio status unavailable"
+      : audio_status.sink.muted ? "Output muted · middle-click to unmute"
+      : "Output ${audio_status.sink.volume}% · ${audio_status.sink.description}"}
+    :onclick "@popupToggle@ audio"
+    :onmiddleclick "@audio@ toggle-sink"
+    :onrightclick "@popupToggle@ audio-output"
+    :onscroll "@audio@ change-sink {}"
+    (circular-progress
+      :class "audio-meter"
+      :value {audio_status.sink.volume}
+      :thickness 3
+      :start-at 75
+      :clockwise true
+      (bar-icon :icon {!audio_status.available ? ""
+        : audio_status.sink.muted ? ""
+        : audio_status.sink.volume == 0 ? ""
+        : audio_status.sink.volume < 34 ? ""
+        : audio_status.sink.volume < 67 ? ""
+        : ""}))))
+
+;; The microphone is an alarm, not a setting: it says something only while an
+;; application is listening or while you have muted it, so it takes a cell in
+;; the pill on those occasions and none at all otherwise.
+(defwidget microphone []
+  (eventbox
+    :class `microphone ${audio_status.source.muted ? "muted" : "listening"}`
+    :visible {audio_status.source.active || audio_status.source.muted}
+    :cursor "pointer"
+    :tooltip {open_popup == "audio" || open_popup == "audio-input" ? "" : audio_status.source.muted ? "Microphone muted · middle-click to unmute"
+      : "Microphone in use by ${arraylength(audio_status.source.clients) > 0
+        ? audio_status.source.clients[0]
+        : "an application"} · middle-click to mute"}
+    :onclick "@popupToggle@ audio"
+    :onmiddleclick "@audio@ toggle-source"
+    :onrightclick "@popupToggle@ audio-input"
+    :onscroll "@audio@ change-source {}"
+    (overlay
+      (circular-progress
+        :class "audio-meter"
+        :value {audio_status.source.volume}
+        :thickness 3
+        :start-at 75
+        :clockwise true
+        (bar-icon :icon {audio_status.source.muted ? "󰍭" : "󰍬"} :nudge "microphone")))))

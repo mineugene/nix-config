@@ -1,0 +1,48 @@
+/* Generated from mine.desktop.theme. Use semantic colors instead of raw palette values. */
+$surface: @surface@;
+$surface-hover: @surfaceHover@;
+
+$dark-bar-background: @darkBarBackground@;
+$dark-background: @darkBackground@;
+$dark-surface: @darkSurface@;
+$dark-surface-alt: @darkSurfaceAlt@;
+$dark-surface-hover: @darkSurfaceHover@;
+$dark-foreground: @darkForeground@;
+$dark-muted: @darkMuted@;
+$dark-accent: @darkAccent@;
+$dark-accent-alt: @darkAccentAlt@;
+$dark-red: @darkRed@;
+$dark-yellow: @darkYellow@;
+$dark-green: @darkGreen@;
+$dark-cyan: @darkCyan@;
+$dark-border: @darkBorder@;
+
+$light-bar-background: @lightBarBackground@;
+$light-background: @lightBackground@;
+$light-surface: @lightSurface@;
+$light-surface-alt: @lightSurfaceAlt@;
+$light-surface-hover: @lightSurfaceHover@;
+$light-foreground: @lightForeground@;
+$light-muted: @lightMuted@;
+$light-accent: @lightAccent@;
+$light-accent-alt: @lightAccentAlt@;
+$light-red: @lightRed@;
+$light-yellow: @lightYellow@;
+$light-green: @lightGreen@;
+$light-cyan: @lightCyan@;
+$light-border: @lightBorder@;
+
+$font-interface-family: "@interfaceFontFamily@";
+$font-interface-size: @interfaceFontSize@px;
+$font-monospace-family: "@monospaceFontFamily@";
+
+$radius-card: @radiusCard@px;
+$radius-pill: @radiusPill@px;
+$border-width: @borderWidth@px;
+
+$spacing-small: @spacingSmall@px;
+$spacing-normal: @spacingNormal@px;
+$bar-height: @barHeight@px;
+$popup-padding: @popupPadding@px;
+
+$animation-fast: @animationFast@ms;

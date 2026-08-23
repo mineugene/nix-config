@@ -1,0 +1,19 @@
+(deflisten notification_state
+  :initial `{"count":0,"dnd":false,"visible":false,"inhibited":false}`
+  `@swayncClient@ --subscribe`)
+
+(defwidget notifications []
+  (box
+    :class {notification_state.dnd ? "notifications dnd" : notification_state.count > 0 ? "notifications unread" : "notifications empty"}
+    :orientation "horizontal"
+    :space-evenly false
+    (button
+      :class "notifications-center"
+      :onclick "@swayncClient@ --skip-wait --toggle-panel"
+      :onrightclick "@swayncClient@ --skip-wait --toggle-dnd"
+      :tooltip {notification_state.dnd ? "Do not disturb enabled · click for notifications; right-click to disable" : notification_state.count > 0 ? "Uncleared notifications · click to open; right-click for do not disturb" : "No uncleared notifications · click to open; right-click for do not disturb"}
+      ;; The filled glyph is the unread signal; a count beside it would say
+      ;; the same thing twice and widen the control as notifications arrive.
+      (bar-icon :icon {notification_state.dnd ? "󱗢"
+        : notification_state.count > 0 ? "󰅺"
+          : "󰆂"}))))

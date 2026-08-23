@@ -1,0 +1,602 @@
+@import "./theme.scss";
+
+* {
+	font-family: $font-interface-family;
+}
+
+// The base size lives here, not on *, so a size set on a container still
+// reaches the labels inside it. A universal rule would match those labels
+// directly and beat the inherited value.
+window {
+	background-color: transparent;
+	border: none;
+	font-size: $font-interface-size;
+}
+
+button {
+	all: unset;
+}
+
+// Every interactive control fades. Eventbox controls such as Bluetooth need
+// explicit coverage because button-only selectors make them snap between colours.
+button,
+.audio,
+.bluetooth,
+.clock,
+.hardware,
+.microphone,
+.network,
+.notifications-center,
+.profile,
+.theme,
+.workspace {
+	transition:
+		background-color $animation-fast ease-out,
+		color $animation-fast ease-out;
+}
+
+// A toggle run is in flight. Every control dims for the duration, so a click
+// still reads as received when a loaded CPU stretches the run past its usual
+// speed, and the bar returns to full strength the moment the run lands.
+// The selector list mirrors the transition group above: those are exactly
+// the surfaces a click can land on.
+.bar-layout.busy button,
+.bar-layout.busy .audio,
+.bar-layout.busy .bluetooth,
+.bar-layout.busy .clock,
+.bar-layout.busy .hardware,
+.bar-layout.busy .microphone,
+.bar-layout.busy .network,
+.bar-layout.busy .notifications-center,
+.bar-layout.busy .profile,
+.bar-layout.busy .theme,
+.bar-layout.busy .workspace {
+	opacity: 0.6;
+}
+
+// Steps above the interface size, used for the bar's text and menu rows.
+$font-size-step-1: $font-interface-size + 1px;
+$font-size-step-2: $font-interface-size + 2px;
+$font-size-step-3: $font-interface-size + 3px;
+
+.popup {
+	// GTK paints a default light border on these surfaces. The popup is
+	// defined by its surface colour alone, matching the bar.
+	border: none;
+	border-radius: $radius-card;
+	padding: $popup-padding;
+	font-family: $font-interface-family;
+	font-size: $font-interface-size;
+}
+
+// Eww adds the window name as a class to its content. Adwaita styles `.menu`
+// as a GTK menu, adding a 4px margin around the `menu` popup's frame.
+window > .menu {
+	margin: 0;
+	padding: 0;
+	border: none;
+	background-color: transparent;
+}
+
+.popup.compact {
+	padding: $spacing-small;
+}
+
+.menu-actions {
+	min-width: 0;
+}
+
+.popup-detail-value {
+	font-family: $font-monospace-family;
+	font-weight: 600;
+}
+
+.popup-detail-name {
+	font-weight: 500;
+}
+
+.popup-title {
+	font-size: 1.15em;
+	font-weight: 700;
+}
+
+.popup-section {
+	border-top: $border-width solid;
+	padding-top: $spacing-normal;
+}
+
+.popup-section-title {
+	font-weight: 700;
+}
+
+.calendar-content,
+.calendar-grid {
+	min-width: 280px;
+}
+
+.calendar-grid {
+	padding-bottom: $spacing-normal;
+}
+
+.calendar-grid.header,
+.calendar-grid.highlight {
+	font-weight: 700;
+}
+
+.calendar-grid.button {
+	border-radius: $radius-card;
+	padding: $spacing-small;
+}
+
+.calendar-grid:selected {
+	border: $border-width solid;
+	border-radius: $radius-card;
+	font-weight: 700;
+}
+
+.calendar-summary {
+	margin-top: $spacing-normal;
+	font-weight: 600;
+}
+
+// Every bar control occupies one square cell of this size. Pills inherit it,
+// so a single-cell pill is a circle and multi-cell pills stay capsule shaped.
+$bar-control: $bar-height - $spacing-small;
+// The canvas follows each palette. Dark mode may opt into true black for an
+// OLED display through mine.desktop.theme.bar.trueBlack.
+// End-4 sizes its workspace dots well inside the pill rather than filling it.
+// The inset is one small step, half of it on each side, so the dot tracks the
+// spacing scale without collapsing: subtracting the normal step instead leaves
+// a 14px cell at the current scale, which is narrower than the digits it has
+// to hold.
+$workspace-control: $bar-control - $spacing-small;
+
+.bar-layout {
+	padding: 0;
+}
+
+.bar-section {
+	background-color: transparent;
+}
+
+.bar-left {
+	margin-left: $spacing-small;
+}
+
+.bar-right {
+	margin-right: $spacing-small;
+}
+
+.island {
+	background-color: $surface-hover;
+	border: 0;
+	border-radius: $radius-pill;
+	min-height: $bar-control;
+	padding: 0;
+}
+
+// The workspace pill keeps the darker surface, so its dots read against
+// the lighter islands. Colour only: geometry stays with .island.
+.workspaces {
+	background-color: $surface;
+}
+
+// A full row of occupied workspaces must clear the pill walls by the same
+// amount above and below. That vertical gap is not the cell margin alone: the
+// shorter cell is centred in the control height, so the slack either side adds
+// to it. Deriving from the same two tokens keeps all four sides equal.
+// This is a margin rather than padding on the pill because GTK boxes do not
+// honour CSS padding.
+.workspace-run {
+	margin: 0 ($bar-control - $workspace-control) * 0.5;
+}
+
+.bar-cell {
+	min-width: $bar-control;
+	min-height: $bar-control;
+}
+
+.clock {
+	font-size: $font-size-step-2;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+}
+
+.menu-action {
+	border-radius: $radius-card;
+	padding: $spacing-small * 0.5 $spacing-small;
+	font-size: $font-size-step-1;
+}
+
+// Click-catcher for dismissing dropdowns. It must stay invisible.
+.popup-backdrop {
+	background-color: transparent;
+}
+
+.hardware-meter,
+.network-meter,
+.audio-meter {
+	min-width: $bar-control;
+	min-height: $bar-control;
+	border-radius: $radius-pill;
+}
+
+// Nerd Font glyphs carry a half-cell advance but full-cell ink that starts at
+// the pen position. Reserving one em and drawing from the left keeps the ink
+// centred inside the cell.
+// No margin here: an icon with a measured rule carries that rule alone, and
+// an icon without one sits at plain geometric centre with no optical nudge.
+.bar-icon {
+	font-family: $font-monospace-family;
+	// On the same scale as the text, so raising the interface size keeps the
+	// glyphs in proportion and the 0.9em ink allowance below still valid.
+	font-size: $font-size-step-3;
+	// Measured mean ink width of the patched Nerd Font glyphs is 1.77 advances
+	// (0.89em). Reserving that and drawing from the pen centres the ink.
+	min-width: 0.9em;
+}
+
+// Per-module compensation, measured from IosevkaTermNF ink at the step-3
+// icon size; re-measure if either changes. A Nerd Font advance is uniform
+// while its ink is not, so each module's glyphs land at their own offset and
+// no single margin can centre them all. Each rule is an absolute margin and
+// more specific than .bar-icon, so source order cannot undo it. Named icons
+// come last so they win over their module's rule.
+.audio .bar-icon {
+	margin-left: 2px;
+}
+
+.bluetooth .bar-icon {
+	margin-left: 3px;
+}
+
+.menu .bar-icon {
+	margin-left: -1px;
+}
+
+.profile .bar-icon {
+	margin-left: 1px;
+}
+
+.bar-icon.nudge-microphone {
+	margin-left: 3px;
+}
+
+.bar-icon.nudge-ethernet {
+	margin-left: 1px;
+}
+
+.hardware-dashboard {
+	min-width: 400px;
+}
+
+.hardware-progress trough,
+.hardware-progress progress,
+.audio-popup scale trough,
+.audio-popup scale highlight {
+	min-height: 6px;
+	border-radius: $radius-pill;
+}
+
+.audio-dashboard,
+.network-dashboard {
+	min-width: 300px;
+}
+
+.audio-control {
+	border-radius: $radius-card;
+	padding: $spacing-small $spacing-normal;
+}
+
+// A selected route reads as the live choice, not just any row.
+.audio-control.active {
+	font-weight: 700;
+}
+
+// An absent device keeps its row but must not invite a click.
+.audio-control.unavailable {
+	opacity: 0.5;
+}
+
+.network-name {
+	font-weight: 600;
+}
+
+.tray {
+	min-height: 16px;
+}
+
+.bar-cell.workspace-label {
+	min-width: $workspace-control;
+	min-height: $workspace-control;
+	// No side margin: adjacent occupied cells must touch so their backgrounds
+	// read as one group rather than separate dots.
+	margin: $spacing-small * 0.5 0;
+}
+
+.workspace-number {
+	font-size: $font-size-step-1;
+}
+
+// Interior of a run stays square; only the run's outer edges are rounded.
+.workspace-label {
+	border-radius: 0;
+	font-weight: 500;
+}
+
+.workspace-label.group-start {
+	border-top-left-radius: $radius-pill;
+	border-bottom-left-radius: $radius-pill;
+}
+
+.workspace-label.group-end {
+	border-top-right-radius: $radius-pill;
+	border-bottom-right-radius: $radius-pill;
+}
+
+// The focused marker is drawn inside the cell rather than replacing it, so a
+// run of occupied workspaces stays one continuous shape underneath it.
+.workspace-label.active .workspace-number {
+	min-width: $workspace-control;
+	min-height: $workspace-control;
+	border-radius: $radius-pill;
+}
+
+.workspace-label.active,
+.workspace-label.urgent {
+	font-weight: 700;
+}
+
+.window-title {
+	min-width: 0;
+	font-size: $font-size-step-1;
+}
+
+.notifications {
+	border-radius: $radius-pill;
+}
+
+.notifications-center {
+	border-radius: $radius-pill;
+	padding: 0;
+}
+
+.network {
+	min-width: 18px;
+}
+
+.theme {
+	border-radius: $radius-pill;
+}
+
+@mixin bar-theme(
+	$background-color,
+	$surface-color,
+	$surface-alt-color,
+	$surface-hover-color,
+	$foreground-color,
+	$muted-color,
+	$accent-color,
+	$accent-alt-color,
+	$warning-color,
+	$danger-color
+) {
+	color: $foreground-color;
+
+	.island {
+		background-color: $surface-hover-color;
+		border: 0;
+	}
+
+	// Stated after .island, which is equally specific and would otherwise win
+	// on source order and flatten these back to one tone.
+	.workspaces {
+		background-color: $surface-color;
+	}
+
+	// Every control paints with the plain foreground. Only hover and the
+	// active workspace differ, so no module needs its own colour rule.
+	// Only the track is painted here. The arc and the glyph inside inherit
+	// their colour from the control, so a hover on the control reaches both;
+	// pinning a colour on the meter blocks that inheritance outright.
+	.hardware-meter,
+	.network-meter,
+	.audio-meter {
+		background-color: $surface-color;
+	}
+
+	// A hardware ring escalates by colour, so a glance costs no reading. These
+	// state-specific rules prevent every ring from inheriting plain foreground
+	// regardless of load.
+	.hardware-meter.warning {
+		color: $warning-color;
+	}
+
+	.hardware-meter.critical {
+		color: $danger-color;
+	}
+
+	// A sensor that is absent says so by fading rather than by reading zero,
+	// which would be indistinguishable from an idle component.
+	.hardware-meter.unavailable {
+		color: $muted-color;
+	}
+
+	// The activity halves are drawn over the base ring, which already paints
+	// the full track. Their own track has to stay clear or it would cover the
+	// ring and the opposite half beneath it.
+	.network-meter-rx,
+	.network-meter-tx {
+		background-color: transparent;
+	}
+
+	.network-meter-rx {
+		color: $accent-color;
+	}
+
+	.network-meter-tx {
+		color: $accent-alt-color;
+	}
+
+	.menu-action {
+		background-color: $surface-alt-color;
+		color: $foreground-color;
+	}
+
+	.workspace-label {
+		background-color: transparent;
+		color: $foreground-color;
+	}
+
+	// The colour has to be set on the label: the button is the node GTK
+	// gives prelight to, but the label above pins a colour of its own and a
+	// pinned colour is never inherited.
+	.workspace:hover .workspace-label {
+		color: $accent-color;
+	}
+
+	.workspace-label.occupied {
+		background-color: $surface-hover-color;
+	}
+
+	.workspace-label.active .workspace-number {
+		background-color: $accent-color;
+		color: $background-color;
+	}
+
+	.audio:hover,
+	.bluetooth:hover,
+	.clock:hover,
+	.hardware:hover,
+	.menu:hover,
+	.microphone:hover,
+	.network:hover,
+	.notifications-center:hover,
+	.profile:hover,
+	.theme:hover,
+	// The button is the only node here that GTK gives a prelight state to.
+	// .workspace-label is a plain box inside it and never matches :hover.
+	.workspace:hover {
+		color: $accent-color;
+	}
+}
+
+.bar-layout.dark {
+	background-color: $dark-bar-background;
+
+	@include bar-theme(
+		$dark-background,
+		$dark-surface,
+		$dark-surface-alt,
+		$dark-surface-hover,
+		$dark-foreground,
+		$dark-muted,
+		$dark-accent,
+		$dark-accent-alt,
+		$dark-yellow,
+		$dark-red
+	);
+}
+
+.bar-layout.light {
+	background-color: $light-bar-background;
+
+	@include bar-theme(
+		$light-background,
+		$light-surface,
+		$light-surface-alt,
+		$light-surface-hover,
+		$light-foreground,
+		$light-muted,
+		$light-accent,
+		$light-accent-alt,
+		$light-yellow,
+		$light-red
+	);
+}
+
+@mixin popup-theme(
+	$background-color,
+	$surface-color,
+	$surface-alt-color,
+	$surface-hover-color,
+	$foreground-color,
+	$muted-color,
+	$accent-color,
+	$border-color
+) {
+	background-color: $surface-color;
+	border-color: $border-color;
+	color: $foreground-color;
+
+	.calendar-grid.header,
+	.calendar-grid.button,
+	.popup-section-title {
+		color: $foreground-color;
+	}
+
+	.calendar-grid.button:hover,
+	.menu-action:hover,
+	.audio-control:hover {
+		background-color: $surface-hover-color;
+		color: $foreground-color;
+	}
+
+	.calendar-grid:indeterminate {
+		color: $muted-color;
+	}
+
+	.calendar-grid:selected {
+		background-color: $accent-color;
+		border-color: $foreground-color;
+		color: $background-color;
+	}
+
+	.popup-section {
+		border-color: $border-color;
+	}
+
+	.hardware-progress trough,
+	&.audio-popup scale trough {
+		background-color: $surface-hover-color;
+	}
+
+	.hardware-progress progress,
+	&.audio-popup scale highlight {
+		background-color: $accent-color;
+	}
+
+	.audio-control {
+		background-color: $surface-alt-color;
+	}
+
+	.audio-control.active {
+		color: $accent-color;
+	}
+}
+
+.popup.dark {
+	@include popup-theme(
+		$dark-background,
+		$dark-surface,
+		$dark-surface-alt,
+		$dark-surface-hover,
+		$dark-foreground,
+		$dark-muted,
+		$dark-accent,
+		$dark-border
+	);
+}
+
+.popup.light {
+	@include popup-theme(
+		$light-background,
+		$light-surface,
+		$light-surface-alt,
+		$light-surface-hover,
+		$light-foreground,
+		$light-muted,
+		$light-accent,
+		$light-border
+	);
+}

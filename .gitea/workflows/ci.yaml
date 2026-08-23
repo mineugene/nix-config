@@ -1,0 +1,35 @@
+# Only trusted pushes and explicit maintainer dispatches execute here;
+# untrusted pull requests intentionally do not trigger this workflow.
+name: CI
+
+on:
+    push:
+        branches: [main]
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    public-flake:
+        runs-on: ubuntu-latest
+        timeout-minutes: 120
+        steps:
+            - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+              with:
+                  fetch-depth: 0
+                  persist-credentials: false
+            - uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+              with:
+                  extra-conf: |
+                      experimental-features = nix-command flakes
+            - name: Inspect flake metadata
+              run: nix flake metadata
+            - name: Scan Git history for secrets
+              run: nix run .#gitleaks -- git --redact
+            - name: nix flake check
+              run: nix flake check --print-build-logs

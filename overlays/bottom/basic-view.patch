@@ -1,0 +1,548 @@
+diff --git a/src/canvas/components/data_table/column.rs b/src/canvas/components/data_table/column.rs
+index 07f24b7..2920bcf 100644
+--- a/src/canvas/components/data_table/column.rs
++++ b/src/canvas/components/data_table/column.rs
+@@ -19,6 +19,9 @@ pub enum ColumnWidthBounds {
+         max_percentage: Option<f32>,
+     },
+ 
++    /// A width of this type receives any space left after sizing other columns.
++    Fill,
++
+     /// A width of this type is either as long as specified, or does not appear
+     /// at all.
+     Hard(u16),
+@@ -133,6 +136,14 @@ impl<H: ColumnHeader> Column<H> {
+         }
+     }
+ 
++    pub const fn fill(inner: H) -> Self {
++        Self {
++            inner,
++            bounds: ColumnWidthBounds::Fill,
++            is_hidden: false,
++        }
++    }
++
+     pub const fn hard(inner: H, width: u16) -> Self {
+         Self {
+             inner,
+@@ -181,6 +192,7 @@ where
+ 
+         let mut total_width_left = total_width;
+         let mut calculated_widths = vec![];
++        let mut fill_columns = vec![];
+         let columns = if left_to_right {
+             Either::Left(self.iter())
+         } else {
+@@ -213,6 +225,7 @@ where
+ 
+                     min(min(soft_limit, *desired), total_width_left)
+                 }
++                ColumnWidthBounds::Fill => column.header_len() as u16,
+                 ColumnWidthBounds::Hard(width) => *width,
+                 ColumnWidthBounds::FollowHeader => column.header_len() as u16,
+             };
+@@ -221,6 +234,7 @@ where
+                 break;
+             } else {
+                 total_width_left = total_width_left.saturating_sub(new_width + COLUMN_SPACING);
++                fill_columns.push(matches!(column.bounds(), ColumnWidthBounds::Fill));
+ 
+                 // SAFETY: This is safe as we call `stop_allocating_space` which checks that
+                 // the value pushed is greater than zero.
+@@ -233,26 +247,32 @@ where
+         if !calculated_widths.is_empty() {
+             if !left_to_right {
+                 calculated_widths.reverse();
++                fill_columns.reverse();
+             }
+ 
+-            // Redistribute remaining space.
+-            let mut num_dist = calculated_widths.len() as u16;
+-            let amount_per_slot = total_width_left / num_dist; // Safe from DBZ by above empty check.
+-            total_width_left %= num_dist;
++            if let Some(fill_index) = fill_columns.iter().position(|is_fill| *is_fill) {
++                calculated_widths[fill_index] =
++                    calculated_widths[fill_index].saturating_add(total_width_left);
++            } else {
++                // Redistribute remaining space.
++                let mut num_dist = calculated_widths.len() as u16;
++                let amount_per_slot = total_width_left / num_dist; // Safe from DBZ by above empty check.
++                total_width_left %= num_dist;
+ 
+-            for width in calculated_widths.iter_mut() {
+-                if num_dist == 0 {
+-                    break;
++                for width in calculated_widths.iter_mut() {
++                    if num_dist == 0 {
++                        break;
++                    }
++
++                    if total_width_left > 0 {
++                        *width = width.saturating_add(amount_per_slot + 1);
++                        total_width_left -= 1;
++                    } else {
++                        *width = width.saturating_add(amount_per_slot);
++                    }
++
++                    num_dist -= 1;
+                 }
+-
+-                if total_width_left > 0 {
+-                    *width = width.saturating_add(amount_per_slot + 1);
+-                    total_width_left -= 1;
+-                } else {
+-                    *width = width.saturating_add(amount_per_slot);
+-                }
+-
+-                num_dist -= 1;
+             }
+         }
+ 
+@@ -286,4 +306,19 @@ mod test {
+         let column = Column::new(TestInnerColumn);
+         assert_eq!(column.header(), TestInnerColumn.header());
+     }
++
++    #[test]
++    fn fill_column_receives_remaining_width() {
++        let columns = [
++            Column::hard("PID", 3),
++            Column::fill("Name"),
++            Column::hard("CPU", 3),
++        ];
++
++        let widths = columns.calculate_column_widths(20, true);
++        assert_eq!(
++            widths.into_iter().map(NonZeroU16::get).collect::<Vec<_>>(),
++            [3, 11, 3]
++        );
++    }
+ }
+diff --git a/src/canvas/components/data_table/sortable.rs b/src/canvas/components/data_table/sortable.rs
+index 99d522d..5944b76 100644
+--- a/src/canvas/components/data_table/sortable.rs
++++ b/src/canvas/components/data_table/sortable.rs
+@@ -211,6 +211,14 @@ where
+         }
+     }
+ 
++    /// Creates a new [`SortColumn`] that fills the remaining width.
++    pub const fn fill(inner: T) -> Self {
++        Self {
++            column: Column::fill(inner),
++            default_order: SortOrder::const_default(),
++        }
++    }
++
+     /// Creates a new [`SortColumn`] with a hard width, which has no shortcut
+     /// and sorts by default in ascending order ([`SortOrder::Ascending`]).
+     pub const fn hard(inner: T, width: u16) -> Self {
+diff --git a/src/canvas/components/pipe_gauge.rs b/src/canvas/components/pipe_gauge.rs
+index 5b64ac2..8146d01 100644
+--- a/src/canvas/components/pipe_gauge.rs
++++ b/src/canvas/components/pipe_gauge.rs
+@@ -25,6 +25,7 @@ pub struct PipeGauge<'a> {
+     inner_label: Option<Line<'a>>,
+     label_style: Style,
+     gauge_style: Style,
++    bracket_style: Style,
+     hide_parts: LabelLimit,
+ }
+ 
+@@ -37,6 +38,7 @@ impl Default for PipeGauge<'_> {
+             inner_label: None,
+             label_style: Style::default(),
+             gauge_style: Style::default(),
++            bracket_style: Style::default(),
+             hide_parts: LabelLimit::default(),
+         }
+     }
+@@ -83,6 +85,13 @@ impl<'a> PipeGauge<'a> {
+         self
+     }
+ 
++    /// The style of the brackets surrounding the gauge.
++    pub fn bracket_style(mut self, style: Style) -> Self {
++        self.bracket_style = style;
++
++        self
++    }
++
+     /// Whether to hide parts of the gauge/label if the inner label wouldn't
+     /// fit.
+     pub fn hide_parts(mut self, hide_parts: LabelLimit) -> Self {
+@@ -184,7 +193,12 @@ impl Widget for PipeGauge<'_> {
+                 );
+             }
+             LabelLimit::Auto(_) | LabelLimit::None => {
+-                let (start, _) = buf.set_line(col, row, &Line::from("["), gauge_area.width);
++                let (start, _) = buf.set_line(
++                    col,
++                    row,
++                    &Line::styled("[", self.bracket_style),
++                    gauge_area.width,
++                );
+                 if start >= gauge_area.right() {
+                     return;
+                 }
+@@ -192,7 +206,7 @@ impl Widget for PipeGauge<'_> {
+                 let (end, _) = buf.set_line(
+                     (gauge_area.x + gauge_area.width).saturating_sub(1),
+                     row,
+-                    &Line::from("]"),
++                    &Line::styled("]", self.bracket_style),
+                     gauge_area.width,
+                 );
+ 
+diff --git a/src/canvas/widgets/cpu_basic.rs b/src/canvas/widgets/cpu_basic.rs
+index 3178568..b91c881 100644
+--- a/src/canvas/widgets/cpu_basic.rs
++++ b/src/canvas/widgets/cpu_basic.rs
+@@ -68,6 +68,7 @@ impl Painter {
+                 PipeGauge::default()
+                     .gauge_style(style)
+                     .label_style(style)
++                    .bracket_style(self.styles.disabled_text_style)
+                     .inner_label(inner)
+                     .start_label(outer)
+                     .ratio(ratio.into()),
+@@ -135,6 +136,7 @@ impl Painter {
+                             PipeGauge::default()
+                                 .gauge_style(style)
+                                 .label_style(style)
++                                .bracket_style(self.styles.disabled_text_style)
+                                 .inner_label(inner_label)
+                                 .start_label(start_label)
+                                 .ratio(ratio.into())
+@@ -159,9 +161,9 @@ impl Painter {
+     #[inline]
+     fn cpu_info(&self, data: &CpuData, show_decimal: bool) -> (String, String, f32, Style) {
+         let (outer, style) = match data.data_type {
+-            CpuDataType::Avg => ("AVG".to_string(), self.styles.avg_cpu_colour),
++            CpuDataType::Avg => ("CPU AVG".to_string(), self.styles.avg_cpu_colour),
+             CpuDataType::Cpu(index) => (
+-                format!("{index:<3}",),
++                format!("CPU{index}"),
+                 self.styles.cpu_colour_styles[index % self.styles.cpu_colour_styles.len()],
+             ),
+         };
+diff --git a/src/widgets/process_table.rs b/src/widgets/process_table.rs
+index f1aa0ea..53ee160 100644
+--- a/src/widgets/process_table.rs
++++ b/src/widgets/process_table.rs
+@@ -63,7 +63,7 @@ impl TreeCollapsed {
+     pub(crate) fn new(default_collapsed: bool) -> Self {
+         if default_collapsed {
+             TreeCollapsed::DefaultCollapse {
+-                expanded_pids: HashSet::default(),
++                expanded_pids: [0, 1, 2].into_iter().collect(),
+             }
+         } else {
+             TreeCollapsed::DefaultExpand {
+@@ -140,30 +140,30 @@ fn make_column(column: ProcColumn) -> SortColumn<ProcColumn> {
+     use ProcColumn::*;
+ 
+     match column {
+-        CpuPercent => SortColumn::new(CpuPercent).default_descending(),
+-        MemValue => SortColumn::new(MemValue).default_descending(),
+-        MemPercent => SortColumn::new(MemPercent).default_descending(),
+-        VirtualMem => SortColumn::new(VirtualMem).default_descending(),
+-        Pid => SortColumn::new(Pid),
+-        Count => SortColumn::new(Count),
+-        Name => SortColumn::soft(Name, Some(0.3)),
+-        Command => SortColumn::soft(Command, Some(0.3)),
+-        ReadPerSecond => SortColumn::hard(ReadPerSecond, 8).default_descending(),
+-        WritePerSecond => SortColumn::hard(WritePerSecond, 8).default_descending(),
+-        TotalRead => SortColumn::hard(TotalRead, 8).default_descending(),
+-        TotalWrite => SortColumn::hard(TotalWrite, 8).default_descending(),
+-        User => SortColumn::soft(User, Some(0.05)),
+-        State => SortColumn::hard(State, 9),
+-        Time => SortColumn::new(Time),
+-        Priority => SortColumn::new(Priority).default_descending(),
++        CpuPercent => SortColumn::soft(CpuPercent, None).default_descending(),
++        MemValue => SortColumn::soft(MemValue, None).default_descending(),
++        MemPercent => SortColumn::soft(MemPercent, None).default_descending(),
++        VirtualMem => SortColumn::soft(VirtualMem, None).default_descending(),
++        Pid => SortColumn::soft(Pid, None),
++        Count => SortColumn::soft(Count, None),
++        Name => SortColumn::fill(Name),
++        Command => SortColumn::fill(Command),
++        ReadPerSecond => SortColumn::soft(ReadPerSecond, None).default_descending(),
++        WritePerSecond => SortColumn::soft(WritePerSecond, None).default_descending(),
++        TotalRead => SortColumn::soft(TotalRead, None).default_descending(),
++        TotalWrite => SortColumn::soft(TotalWrite, None).default_descending(),
++        User => SortColumn::soft(User, None),
++        State => SortColumn::soft(State, None),
++        Time => SortColumn::soft(Time, None),
++        Priority => SortColumn::soft(Priority, None).default_descending(),
+         #[cfg(unix)]
+-        Nice => SortColumn::new(Nice),
++        Nice => SortColumn::soft(Nice, None),
+         #[cfg(feature = "gpu")]
+-        GpuMemValue => SortColumn::new(GpuMemValue).default_descending(),
++        GpuMemValue => SortColumn::soft(GpuMemValue, None).default_descending(),
+         #[cfg(feature = "gpu")]
+-        GpuMemPercent => SortColumn::new(GpuMemPercent).default_descending(),
++        GpuMemPercent => SortColumn::soft(GpuMemPercent, None).default_descending(),
+         #[cfg(feature = "gpu")]
+-        GpuUtilPercent => SortColumn::new(GpuUtilPercent).default_descending(),
++        GpuUtilPercent => SortColumn::soft(GpuUtilPercent, None).default_descending(),
+     }
+ }
+ 
+@@ -510,16 +510,22 @@ impl ProcWidgetState {
+             ProcWidgetMode::Tree(collapse) => self.get_tree_data(collapse, stored_data),
+         };
+         self.table.set_data(data);
++        self.force_rerender = true;
+         self.force_update_data = false;
+     }
+ 
+     fn get_tree_data(
+         &self, collapsed: &TreeCollapsed, stored_data: &InnerData,
+     ) -> Vec<ProcWidgetData> {
+-        const BRANCH_END: char = '└';
+-        const BRANCH_SPLIT: char = '├';
+-        const BRANCH_HORIZONTAL: char = '─';
+-        const SPACED_BRANCH_VERTICAL: &str = "│  ";
++        fn depth_prefix(depth: usize, marker: char) -> String {
++            let depth = if depth > 99 {
++                ">99".to_string()
++            } else {
++                format!("{depth:>3}")
++            };
++
++            format!("{depth} {marker} ")
++        }
+ 
+         let search_query = self.get_query();
+         let is_using_command = self.is_using_command();
+@@ -649,7 +655,7 @@ impl ProcWidgetState {
+             filtered_tree
+         };
+ 
+-        let mut data = vec![];
++        let mut data: Vec<ProcWidgetData> = vec![];
+         let mut prefixes = vec![];
+         let mut stack = orphan_pids
+             .iter()
+@@ -674,13 +680,21 @@ impl ProcWidgetState {
+         sort_skip_pid_asc(column.inner(), &mut stack, self.table.order());
+ 
+         let mut length_stack = vec![stack.len()];
++        let mut previous_depth = None;
+         stack.reverse();
+ 
+         while let (Some(process), Some(siblings_left)) = (stack.pop(), length_stack.last_mut()) {
+             *siblings_left -= 1;
+ 
++            let depth = prefixes.len();
++            if previous_depth.is_some_and(|previous_depth| previous_depth > depth)
++                && let Some(previous) = data.last_mut()
++            {
++                previous.underline = true;
++            }
++            previous_depth = Some(depth);
++
+             let disabled = !kept_pids.contains(&process.pid);
+-            let is_last = *siblings_left == 0;
+ 
+             if collapsed.is_collapsed(process.pid) {
+                 let mut summed_process = process.clone();
+@@ -713,53 +727,21 @@ impl ProcWidgetState {
+ 
+                 // This is so that if an entry is "collapsed" but there are no children, avoid
+                 // drawing the "+".
+-                let prefix = if has_children {
+-                    if prefixes.is_empty() {
+-                        "+ ".to_string()
+-                    } else {
+-                        format!(
+-                            "{}{}{} + ",
+-                            prefixes.join(""),
+-                            if is_last { BRANCH_END } else { BRANCH_SPLIT },
+-                            BRANCH_HORIZONTAL
+-                        )
+-                    }
+-                } else if prefixes.is_empty() {
+-                    String::default()
+-                } else {
+-                    format!(
+-                        "{}{}{} ",
+-                        prefixes.join(""),
+-                        if is_last { BRANCH_END } else { BRANCH_SPLIT },
+-                        BRANCH_HORIZONTAL
+-                    )
+-                };
++                let marker = if has_children { '+' } else { ' ' };
++                let prefix = depth_prefix(prefixes.len(), marker);
+ 
+                 data.push(summed_process.prefix(Some(prefix)).disabled(disabled));
+             } else {
+-                let prefix = if prefixes.is_empty() {
+-                    String::default()
+-                } else {
+-                    format!(
+-                        "{}{}{} ",
+-                        prefixes.join(""),
+-                        if is_last { BRANCH_END } else { BRANCH_SPLIT },
+-                        BRANCH_HORIZONTAL
+-                    )
+-                };
+                 let pid = process.pid;
++                let has_children = filtered_tree
++                    .get(&pid)
++                    .is_some_and(|children| !children.is_empty());
++                let marker = if has_children { '-' } else { ' ' };
++                let prefix = depth_prefix(prefixes.len(), marker);
+                 data.push(process.prefix(Some(prefix)).disabled(disabled));
+ 
+                 if let Some(children_pids) = filtered_tree.get(&pid) {
+-                    if prefixes.is_empty() {
+-                        prefixes.push("");
+-                    } else {
+-                        prefixes.push(if is_last {
+-                            "   "
+-                        } else {
+-                            SPACED_BRANCH_VERTICAL
+-                        });
+-                    }
++                    prefixes.push("");
+ 
+                     let mut children = children_pids
+                         .iter()
+@@ -1194,6 +1176,7 @@ mod test {
+             user: Some("N/A".into()),
+             num_similar: 0,
+             disabled: false,
++            underline: false,
+             time: Duration::from_secs(0),
+             #[cfg(feature = "gpu")]
+             gpu_mem_usage: MemUsage::Percent(1.1),
+@@ -1298,6 +1281,20 @@ mod test {
+         init_state(ProcTableConfig::default(), columns)
+     }
+ 
++    #[test]
++    fn process_data_update_recalculates_column_widths() {
++        let mut state = init_default_state(&[
++            ProcWidgetColumn::PidOrCount,
++            ProcWidgetColumn::ProcNameOrCommand,
++            ProcWidgetColumn::Time,
++        ]);
++        state.force_rerender = false;
++
++        state.set_table_data(&InnerData::default());
++
++        assert!(state.force_rerender);
++    }
++
+     #[test]
+     fn default_sort_honoured() {
+         let init_columns = [
+@@ -1696,6 +1693,40 @@ mod test {
+         assert_eq!(get_columns(&state.table), original_columns);
+     }
+ 
++    #[test]
++    fn underlines_row_before_tree_depth_decreases() {
++        let state = init_default_state(&[
++            ProcWidgetColumn::PidOrCount,
++            ProcWidgetColumn::ProcNameOrCommand,
++        ]);
++        let mut process_data = ProcessData::default();
++        for (pid, parent_pid) in [(1, None), (2, Some(1)), (3, Some(2)), (4, Some(1))] {
++            process_data.process_harvest.insert(
++                pid,
++                ProcessHarvest {
++                    pid,
++                    parent_pid,
++                    ..Default::default()
++                },
++            );
++        }
++        process_data.process_parent_mapping.insert(1, vec![2, 4]);
++        process_data.process_parent_mapping.insert(2, vec![3]);
++        process_data.orphan_pids = vec![1];
++        let mut stored_data = InnerData::default();
++        stored_data.process_data = process_data;
++
++        let data = state.get_tree_data(&TreeCollapsed::new(false), &stored_data);
++
++        assert_eq!(
++            data.iter().map(|process| process.pid).collect_vec(),
++            [1, 2, 3, 4]
++        );
++        assert!(!data[1].underline);
++        assert!(data[2].underline);
++        assert!(!data[3].underline);
++    }
++
+     /// Sanity test to ensure tree collapse logic works, both when
+     /// enabled-by-default or disabled-by-default.
+     #[test]
+@@ -1703,7 +1734,9 @@ mod test {
+         {
+             let mut collapsed_by_default = TreeCollapsed::new(true);
+ 
+-            assert!(collapsed_by_default.is_collapsed(1));
++            assert!(!collapsed_by_default.is_collapsed(1));
++            assert!(!collapsed_by_default.is_collapsed(2));
++            assert!(collapsed_by_default.is_collapsed(3));
+ 
+             collapsed_by_default.collapse(1);
+             assert!(collapsed_by_default.is_collapsed(1));
+diff --git a/src/widgets/process_table/process_data.rs b/src/widgets/process_table/process_data.rs
+index f24950f..28fb841 100644
+--- a/src/widgets/process_table/process_data.rs
++++ b/src/widgets/process_table/process_data.rs
+@@ -9,7 +9,10 @@ use std::{
+ };
+ 
+ use concat_string::concat_string;
+-use ratatui::widgets::Row;
++use ratatui::{
++    style::{Modifier, Style},
++    widgets::Row,
++};
+ 
+ use super::process_columns::ProcColumn;
+ #[cfg(target_os = "linux")]
+@@ -228,6 +231,7 @@ pub struct ProcWidgetData {
+     pub user: Option<Arc<str>>,
+     pub num_similar: u64,
+     pub disabled: bool,
++    pub underline: bool,
+     pub time: Duration,
+     #[cfg(feature = "gpu")]
+     pub gpu_mem_usage: MemUsage,
+@@ -274,6 +278,7 @@ impl ProcWidgetData {
+             user: process.user.clone(),
+             num_similar: 1,
+             disabled: false,
++            underline: false,
+             time: process.time,
+             #[cfg(feature = "gpu")]
+             gpu_mem_usage: if is_mem_percent {
+@@ -402,11 +407,16 @@ impl DataToCell<ProcColumn> for ProcWidgetData {
+ 
+     #[inline(always)]
+     fn style_row<'a>(&self, row: Row<'a>, painter: &Painter) -> Row<'a> {
+-        if self.disabled {
+-            row.style(painter.styles.disabled_text_style)
++        let mut style = if self.disabled {
++            painter.styles.disabled_text_style
+         } else {
+-            row
++            Style::default()
++        };
++        if self.underline {
++            style = style.add_modifier(Modifier::UNDERLINED);
+         }
++
++        row.style(style)
+     }
+ 
+     fn column_widths<C: DataTableColumn<ProcColumn>>(data: &[Self], columns: &[C]) -> Vec<u16>
