@@ -1,0 +1,65 @@
+#!/bin/sh
+set -u
+
+if [ "$#" -eq 1 ] && [ "$1" = --help ]; then
+    printf 'usage: ui-kill\n'
+    exit 0
+fi
+
+if [ "$#" -ne 0 ]; then
+    printf 'usage: ui-kill\n' >&2
+    exit 2
+fi
+
+config_home=${XDG_CONFIG_HOME:-${HOME:?HOME must be set}/.config}
+desktop_theme=${UI_DESKTOP_THEME:-desktop-theme}
+rofi=${UI_ROFI:-rofi}
+monitor_topology=${UI_MONITOR_TOPOLOGY:-monitor-topology}
+hyprctl=${UI_HYPRCTL:-hyprctl}
+jq=${UI_JQ:-jq}
+awk=${UI_AWK:-awk}
+kill=${UI_KILL:-kill}
+
+monitor=$("$monitor_topology" primary 2>/dev/null || true)
+[ -n "$monitor" ] || monitor=-1
+mode=$("$desktop_theme" get)
+
+clients=$("$hyprctl" clients -j 2>/dev/null) || clients=
+[ -n "$clients" ] || clients='[]'
+
+# Rows and pids are read from the same snapshot in the same order, so the
+# selected row indexes a parallel list and a window title never reaches the
+# kill command.
+rows=$(printf '%s' "$clients" | "$jq" -r '
+    .[]
+    | select((.pid // 0) > 0)
+    | ((.class // "unknown") + " — " + (.title // ""))
+    | gsub("[\n\r\t]"; " ")
+' 2>/dev/null) || rows=
+
+if [ -z "$rows" ]; then
+    exit 0
+fi
+
+pids=$(printf '%s' "$clients" | "$jq" -r '.[] | select((.pid // 0) > 0) | .pid' 2>/dev/null) || pids=
+
+if ! choice=$(printf '%s\n' "$rows" |
+    "$rofi" \
+        -dmenu \
+        -p Kill \
+        -monitor "$monitor" \
+        -theme "$config_home/rofi/themes/menu-$mode.rasi" \
+        -no-custom \
+        -format i); then
+    exit 0
+fi
+
+case $choice in
+    '' | *[!0-9]*) exit 0 ;;
+esac
+
+pid=$(printf '%s\n' "$pids" | "$awk" -v row="$choice" 'NR == row + 1 { print; exit }')
+[ -n "$pid" ] || exit 0
+
+# SIGTERM lets the application save state; the menu offers no escalation.
+"$kill" "$pid"

@@ -1,0 +1,10 @@
+/* The full-list menu is a filtered scrolling list, not the two-line
+   confirmation: rows align to the leading edge the way the bar's dropdown rows
+   do, and it shows enough entries to scan without an inner scrollbar. */
+listview {
+    lines: 10;
+}
+
+element-text {
+    horizontal-align: 0;
+}
