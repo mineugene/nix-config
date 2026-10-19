@@ -1,0 +1,36 @@
+(defwidget ethernet-popup-content []
+  (popup-frame :kind "ethernet-popup"
+    (box
+      :class "network-dashboard"
+      :orientation "vertical"
+      :space-evenly false
+      :spacing @spacingNormal@
+      (popup-title :text "Ethernet")
+      ;; The wired link is reported, never toggled: unplugging a cable is the
+      ;; only way its carrier changes, so a switch here would be a lie.
+      (popup-section :title {network_state.ethernet.name}
+        (popup-detail
+          :name "Interface"
+          :value {network_state.ethernet.interface == "" ? "Unavailable" : network_state.ethernet.interface})
+        (popup-detail
+          :name "IPv4"
+          :value {network_state.ethernet.ip == "" ? "Unavailable" : network_state.ethernet.ip})
+        (popup-detail
+          :name "Download"
+          :value {network_state.ethernet.rx_bytes_per_second >= 1048576 ? "${round(network_state.ethernet.rx_bytes_per_second / 1048576, 1)} MiB/s" : "${round(network_state.ethernet.rx_bytes_per_second / 1024, 1)} KiB/s"})
+        (popup-detail
+          :name "Upload"
+          :value {network_state.ethernet.tx_bytes_per_second >= 1048576 ? "${round(network_state.ethernet.tx_bytes_per_second / 1048576, 1)} MiB/s" : "${round(network_state.ethernet.tx_bytes_per_second / 1024, 1)} KiB/s"})))))
+
+(defwindow ethernet
+  :monitor 0
+  :geometry (geometry
+    :x "0px"
+    :y "@popupTop@px"
+    :width "@popupWidth@px"
+    :anchor "top right")
+  :stacking "overlay"
+  :exclusive false
+  :focusable "none"
+  :namespace "eww-ethernet"
+  (ethernet-popup-content))

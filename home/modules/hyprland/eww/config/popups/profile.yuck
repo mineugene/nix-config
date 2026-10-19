@@ -1,0 +1,51 @@
+;; Capabilities do not change while a session runs, but a poll costs nothing
+;; at this interval and survives a machine gaining swap or a resume device
+;; without a restart of the bar.
+(defpoll can_hibernate
+  :interval "1h"
+  :initial "false"
+  `@uiPower@ can hibernate`)
+
+(defwidget profile-popup-content []
+  (popup-frame :kind "profile-popup compact"
+    (box
+      :class "menu-actions"
+      :orientation "vertical"
+      :space-evenly false
+      :spacing @spacingCompact@
+      ;; Eww kills a row's command 200ms after the click, while a confirmation
+      ;; waits on the user. Each row backgrounds ui-power so it outlives the
+      ;; click and acts once confirmed. Dismissal runs at once, so a popup left
+      ;; open when the machine suspends cannot reappear on resume.
+      (popup-action :action "@uiPower@ lock & @popupToggle@ close-all"
+        (label :xalign 0 :text "Lock"))
+      (popup-action :action "@uiPower@ logout & @popupToggle@ close-all"
+        (label :xalign 0 :text "Log out"))
+      (popup-action :action "@uiPower@ suspend & @popupToggle@ close-all"
+        (label :xalign 0 :text "Suspend"))
+      ;; An action the machine cannot carry out is worse than a missing one:
+      ;; it fails silently well after the menu has closed. The wrapper carries
+      ;; the visibility so the row itself stays the shared shape.
+      (box
+        :visible {can_hibernate == "true"}
+        :orientation "vertical"
+        :space-evenly false
+        (popup-action :action "@uiPower@ hibernate & @popupToggle@ close-all"
+          (label :xalign 0 :text "Hibernate")))
+      (popup-action :action "@uiPower@ reboot & @popupToggle@ close-all"
+        (label :xalign 0 :text "Reboot"))
+      (popup-action :action "@uiPower@ poweroff & @popupToggle@ close-all"
+        (label :xalign 0 :text "Power off")))))
+
+(defwindow profile
+  :monitor 0
+  :geometry (geometry
+    :x "0px"
+    :y "@popupTop@px"
+    :width "@popupWidth@px"
+    :anchor "top right")
+  :stacking "overlay"
+  :exclusive false
+  :focusable "none"
+  :namespace "eww-profile"
+  (profile-popup-content))

@@ -1,0 +1,46 @@
+(defwidget wifi-popup-content []
+  (popup-frame :kind "wifi-popup"
+    (box
+      :class "network-dashboard"
+      :orientation "vertical"
+      :space-evenly false
+      :spacing @spacingNormal@
+      (popup-title :text "Wi-Fi")
+      ;; A blocked radio must still be reachable, so the row stays and refuses
+      ;; only the click when the machine has no wireless interface at all.
+      (button
+        :class "menu-action"
+        :sensitive {network_state.wifi.available}
+        :onclick {network_state.wifi.state == "off" ? "@networkListener@ wifi on" : "@networkListener@ wifi off"}
+        (label
+          :xalign 0
+          :text {network_state.wifi.state == "off" ? "Turn Wi-Fi on" : "Turn Wi-Fi off"}))
+      (popup-section :title {network_state.wifi.name}
+        (popup-detail
+          :name "Interface"
+          :value {network_state.wifi.interface == "" ? "Unavailable" : network_state.wifi.interface})
+        (popup-detail
+          :name "Signal"
+          :value {(network_state.wifi.signal ?: -1) < 0 ? "Unavailable" : "${network_state.wifi.signal}%"})
+        (popup-detail
+          :name "IPv4"
+          :value {network_state.wifi.ip == "" ? "Unavailable" : network_state.wifi.ip})
+        (popup-detail
+          :name "Download"
+          :value {network_state.wifi.rx_bytes_per_second >= 1048576 ? "${round(network_state.wifi.rx_bytes_per_second / 1048576, 1)} MiB/s" : "${round(network_state.wifi.rx_bytes_per_second / 1024, 1)} KiB/s"})
+        (popup-detail
+          :name "Upload"
+          :value {network_state.wifi.tx_bytes_per_second >= 1048576 ? "${round(network_state.wifi.tx_bytes_per_second / 1048576, 1)} MiB/s" : "${round(network_state.wifi.tx_bytes_per_second / 1024, 1)} KiB/s"})))))
+
+(defwindow wifi
+  :monitor 0
+  :geometry (geometry
+    :x "0px"
+    :y "@popupTop@px"
+    :width "@popupWidth@px"
+    :anchor "top right")
+  :stacking "overlay"
+  :exclusive false
+  :focusable "none"
+  :namespace "eww-wifi"
+  (wifi-popup-content))

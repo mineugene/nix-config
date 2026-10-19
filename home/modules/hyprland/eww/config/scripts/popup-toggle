@@ -1,0 +1,106 @@
+#!/bin/sh
+set -eu
+
+popup_names='@popupNames@'
+# One backdrop per monitor: a layer-shell window covers only the screen it
+# maps to, so a single backdrop leaves popups undismissable from the others.
+backdrops='popup-backdrop popup-backdrop-secondary'
+popup_name=${1-}
+
+if [ "$#" -ne 1 ]; then
+    printf 'usage: popup-toggle <popup-name>|close-all\n' >&2
+    exit 64
+fi
+
+if [ "$popup_name" != close-all ]; then
+    case " $popup_names " in
+        *" $popup_name "*)
+            ;;
+        *)
+            printf 'unknown popup: %s\n' "$popup_name" >&2
+            exit 64
+            ;;
+    esac
+fi
+
+# Eww kills a widget command that outlives its 200ms timeout, and a busy CPU
+# can stretch the eww calls below past that, leaving a toggle half-done. The
+# click therefore detaches: eww sees its direct child exit at once, while the
+# detached copy, which eww never waits on, runs the sequence to its end.
+if [ -z "${POPUP_TOGGLE_FOREGROUND:-}" ]; then
+    POPUP_TOGGLE_FOREGROUND=1 "$0" "$@" &
+    exit 0
+fi
+
+# Runs serialise on a lock that is never deleted: a queued click waits here,
+# then snapshots the windows its predecessor actually opened, so any number
+# of rapid clicks resolves to exactly one final state instead of stacking
+# popups. The kernel releases the lock when the holder dies, so a crash
+# cannot wedge the queue.
+state_root=${EWW_POPUP_STATE_ROOT:-${XDG_STATE_HOME:-"$HOME/.local/state"}/eww}
+mkdir -p "$state_root"
+lock_file=$state_root/popup-toggle.lock
+exec 9>"$lock_file"
+flock 9
+
+# The busy flag clears on every exit the process can observe: TERM and
+# friends become plain exits so this trap still runs, and it runs while the
+# lock is held, so the flag cannot flicker false while a queued click waits.
+trap '@eww@ update popup_busy=false >/dev/null 2>&1 || true' EXIT
+trap 'exit' TERM HUP INT
+@eww@ update popup_busy=true >/dev/null 2>&1 || true
+
+# One snapshot drives every later step, so the toggle costs a handful of eww
+# calls instead of a blind sweep over every window. A window id is the text
+# after the first ": " on each `active-windows` line.
+open_windows=' '
+while IFS= read -r line; do
+    case $line in
+        *': '*)
+            open_windows="$open_windows${line#*: } "
+            ;;
+    esac
+done <<EOF
+$(@eww@ active-windows 2>/dev/null || true)
+EOF
+
+window_open() {
+    case $open_windows in
+        *" $1 "*)
+            return 0
+            ;;
+    esac
+    return 1
+}
+
+popup_was_open=false
+if [ "$popup_name" != close-all ] && window_open "$popup_name"; then
+    popup_was_open=true
+fi
+
+# Selecting another control always replaces the open popup.
+for popup in $popup_names; do
+    if window_open "$popup"; then
+        @eww@ close "$popup" >/dev/null 2>&1 || true
+    fi
+done
+
+if [ "$popup_name" = close-all ] || [ "$popup_was_open" = true ]; then
+    # Dismissal: the backdrops go too, but only the ones actually mapped.
+    for backdrop in $backdrops; do
+        if window_open "$backdrop"; then
+            @eww@ close "$backdrop" >/dev/null 2>&1 || true
+        fi
+    done
+    @eww@ update open_popup='' >/dev/null 2>&1 || true
+else
+    # Backdrops map first so the popup stacks above them. A backdrop for an
+    # absent monitor simply fails to open, and one already mapped stays put.
+    for backdrop in $backdrops; do
+        if ! window_open "$backdrop"; then
+            @eww@ open "$backdrop" >/dev/null 2>&1 || true
+        fi
+    done
+    @eww@ open "$popup_name"
+    @eww@ update open_popup="$popup_name"
+fi

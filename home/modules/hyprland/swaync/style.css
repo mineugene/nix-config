@@ -1,0 +1,327 @@
+@import url("theme.css");
+
+:root {
+    --notification-icon-size: 48px;
+    --notification-app-icon-size: 16px;
+    --notification-group-icon-size: 24px;
+    --notification-shadow: none;
+}
+
+* {
+    font-family: "@interfaceFontFamily@";
+    font-size: @interfaceFontSize@px;
+    color: var(--foreground);
+}
+
+notificationwindow,
+blankwindow,
+.floating-notifications,
+.blank-window {
+    background: transparent;
+}
+
+.notification-row {
+    background: transparent;
+    outline: none;
+}
+
+/* Uniform inset around every notification surface, so the toast keeps the
+   same gap to every screen edge instead of a wider top than side. */
+.notification-row .notification-background {
+    padding: @spacingSmall@px;
+}
+
+.floating-notifications .notification {
+    min-width: 360px;
+    background: var(--surface);
+    border: none;
+    border-radius: @radiusGeneral@px;
+    box-shadow: none;
+    padding: 0;
+    transition: background-color @animationFast@ms ease-out;
+}
+
+.notification.low {
+    border: @borderWidth@px solid var(--muted);
+}
+
+.notification.critical {
+    border: @borderWidth@px solid var(--critical);
+}
+
+.notification-row:focus .notification,
+.notification-row:hover .notification {
+    background: var(--surface-hover);
+}
+
+/* One content inset for every notification, toast and history alike. */
+.notification-default-action {
+    background: transparent;
+    border: none;
+    border-radius: @radiusGeneral@px;
+    box-shadow: none;
+    margin: 0;
+    padding: @spacingNormal@px;
+    transition: background-color @animationFast@ms ease-out;
+}
+
+.notification-default-action:hover,
+.notification-default-action:focus {
+    background: var(--surface-hover);
+}
+
+.notification-content .summary {
+    background: transparent;
+    color: var(--foreground);
+    font-size: 1.05em;
+    font-weight: 700;
+    text-shadow: none;
+}
+
+.notification-content .body {
+    background: transparent;
+    color: var(--foreground);
+    font-weight: 400;
+    text-shadow: none;
+}
+
+.notification-content .app-name {
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.85em;
+    font-weight: 400;
+    margin-top: @spacingSmall@px;
+    text-shadow: none;
+}
+
+.notification-content .time {
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.85em;
+    font-weight: 400;
+    margin-right: @spacingSmall@px;
+    text-shadow: none;
+}
+
+.notification-content .image {
+    -gtk-icon-filter: none;
+    -gtk-icon-size: var(--notification-icon-size);
+    border-radius: @radiusSmall@px;
+    margin-right: @spacingSmall@px;
+}
+
+.notification-content .app-icon {
+    -gtk-icon-filter: none;
+    -gtk-icon-size: var(--notification-app-icon-size);
+    -gtk-icon-shadow: none;
+    margin: @spacingSmall@px;
+}
+
+.close-button {
+    background: var(--surface-alt);
+    border: none;
+    border-radius: @radiusSmall@px;
+    box-shadow: none;
+    color: var(--muted);
+    margin: @spacingSmall@px;
+    min-height: 24px;
+    min-width: 24px;
+    padding: 0;
+}
+
+/* The action row is the notification's submenu. Buttons follow the popover
+   action rows: flat surface-alt, no border, and the row keeps the trailing
+   inset so the gap below matches the gap above. */
+.notification-alt-actions {
+    background: transparent;
+    padding: 0 12px @spacingNormal@px;
+}
+
+.notification-action {
+    margin: 0 4px;
+    padding: 0;
+}
+
+.notification-action > button,
+.inline-reply-button {
+    background: var(--surface-alt);
+    border: none;
+    border-radius: @radiusSmall@px;
+    box-shadow: none;
+    color: var(--foreground);
+    padding: 4px @spacingSmall@px;
+}
+
+.inline-reply-entry {
+    background: var(--surface-alt);
+    border: @borderWidth@px solid var(--notification-border);
+    border-radius: @radiusSmall@px;
+    box-shadow: none;
+    color: var(--foreground);
+    padding: @spacingSmall@px;
+}
+
+.notification-group {
+    background: transparent;
+    transition: opacity @animationNormal@ms ease-out;
+}
+
+.notification-group .notification-group-headers,
+.notification-group .notification-group-buttons {
+    color: var(--foreground);
+    margin: 0 @spacingNormal@px;
+}
+
+.notification-group .notification-group-header {
+    color: var(--muted);
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+/* ---------- Control center ---------- */
+
+/* The panel is one flat surface, like a popover: the outer padding lives on
+   the inner box, never on the scrolled window, whose scroll range would then
+   grow and draw its overlay scrollbar across the top controls. */
+.control-center {
+    background: var(--surface);
+    border: none;
+    border-radius: @radiusGeneral@px;
+    box-shadow: none;
+    color: var(--foreground);
+}
+
+.control-center .widgets {
+    padding: @spacingNormal@px;
+}
+
+/* Only the notification list scrolls. */
+.control-center > scrollbar {
+    opacity: 0;
+}
+
+.control-center .control-center-list,
+.control-center .notification-group,
+.control-center .notification-row {
+    background: transparent;
+}
+
+.widget {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+}
+
+.widget + .widget {
+    border-top: @borderWidth@px solid var(--notification-border);
+    margin-top: @spacingNormal@px;
+    padding-top: @spacingNormal@px;
+}
+
+.control-center-list-placeholder {
+    color: var(--muted);
+}
+
+.widget-title > label {
+    color: var(--foreground);
+    font-size: 1.15em;
+    font-weight: 700;
+    margin-right: @spacingSmall@px;
+}
+
+.widget-title > button {
+    background: var(--surface-alt);
+    border: none;
+    border-radius: @radiusSmall@px;
+    box-shadow: none;
+    color: var(--foreground);
+    padding: 4px @spacingSmall@px;
+}
+
+/* Do Not Disturb is a row toggle, matching the popover on/off rows rather
+   than a bare GTK switch. */
+.widget-buttons-grid flowboxchild {
+    padding: 0;
+}
+
+.widget-buttons-grid flowboxchild > button {
+    background: var(--surface-alt);
+    border: none;
+    border-radius: @radiusSmall@px;
+    box-shadow: none;
+    color: var(--foreground);
+    padding: 4px @spacingSmall@px;
+}
+
+.widget-buttons-grid flowboxchild > button.toggle:checked {
+    background: var(--accent);
+    color: var(--background);
+}
+
+/* History entries are flat rows on the panel surface, split by the same rule
+   as the sections around them. */
+.control-center .notification-row .notification-background {
+    padding: 0;
+}
+
+.control-center .notification {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.control-center row + row .notification {
+    border-top: @borderWidth@px solid var(--notification-border);
+}
+
+/* History rows pad their content off the row edge, so the hover highlight
+   reads as a bar behind the text rather than a box the text sits on. */
+.control-center .notification-default-action {
+    padding: @spacingNormal@px @spacingSmall@px;
+}
+
+.control-center .notification-alt-actions {
+    margin: 0 -4px;
+    padding: 0 @spacingSmall@ @spacingNormal@px;
+}
+
+.control-center .notification-row:focus .notification,
+.control-center .notification-row:hover .notification {
+    border-radius: @radiusSmall@px;
+}
+
+.widget-title > button:hover,
+.widget-title > button:focus,
+.widget-buttons-grid flowboxchild > button:hover,
+.notification-action > button:hover,
+.inline-reply-button:hover,
+.close-button:hover {
+    background: var(--surface-hover);
+    color: var(--foreground);
+}
+
+/* The slider carries no border of its own; its colour is the only highlight,
+   so the element matches the track it sits on. */
+scrollbar,
+scrollbar trough {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+scrollbar slider {
+    background: var(--muted);
+    border: none;
+    border-radius: @radiusPill@px;
+    box-shadow: none;
+    min-height: 4px;
+    min-width: 4px;
+}
+
+scrollbar slider:hover {
+    background: var(--accent);
+}

@@ -1,0 +1,56 @@
+--- a/detector/gpg_linux.go
++++ b/detector/gpg_linux.go
+@@ -799 +799,3 @@
+-	check := func(response chan error, timer *time.Timer) {
++	// check sends LEARN and reports whether it blocked long enough for the
++	// notification timer to fire.
++	check := func(response chan error, timer *time.Timer) bool {
+@@ -805,0 +808 @@
++			return true
+@@ -806,0 +810,4 @@
++		if err != nil {
++			log.Debugf("LEARN completed below the notify threshold with an error: %v", err)
++		}
++		return false
+@@ -809,9 +815,0 @@
+-		response := make(chan error)
+-		timer := time.AfterFunc(gpgTouchDelay, func() {
+-			notifications.set(gpgBusyCheckSource, true)
+-			err := <-response
+-			if err != nil {
+-				log.Errorf("Agent returned an error: %v", err)
+-			}
+-			notifications.set(gpgBusyCheckSource, false)
+-		})
+@@ -819 +817,24 @@
+-		check(response, timer)
++
++		// On a cold agent start the triggering operation may not have reached
++		// scdaemon yet, so a single LEARN can complete quickly and the touch
++		// wait would go unnotified. Probe a few times: once the operation
++		// holds the card, LEARN blocks behind it and the notification fires.
++		for attempt := 0; attempt < 3; attempt++ {
++			if attempt > 0 {
++				time.Sleep(500 * time.Millisecond)
++			}
++
++			response := make(chan error)
++			timer := time.AfterFunc(gpgTouchDelay, func() {
++				notifications.set(gpgBusyCheckSource, true)
++				err := <-response
++				if err != nil {
++					log.Errorf("Agent returned an error: %v", err)
++				}
++				notifications.set(gpgBusyCheckSource, false)
++			})
++
++			if check(response, timer) {
++				break
++			}
++		}
+@@ -837 +858,4 @@
+-	requestGPGCheck := make(chan bool)
++	// Capacity 1 lets a request that arrives while a check is already running
++	// queue up as a flag, so the checker runs one more cycle for it instead of
++	// dropping the operation entirely.
++	requestGPGCheck := make(chan bool, 1)

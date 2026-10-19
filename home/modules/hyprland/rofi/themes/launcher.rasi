@@ -1,0 +1,14 @@
+configuration {
+    show-icons: true;
+    /* The mode name is scaffolding. A search glyph says the same thing in the
+       space of one character and needs no translation. */
+    display-drun: "";
+}
+
+mainbox {
+    children: [ inputbar, listview ];
+}
+
+listview {
+    lines: 8;
+}

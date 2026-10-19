@@ -1,0 +1,162 @@
+(defvar audio_output_default_expanded false)
+(defvar audio_input_default_expanded false)
+
+(defwidget audio-device-row [device]
+  (button
+    :class {device.active ? "audio-control active" : "audio-control"}
+    :halign "start"
+    :onclick "@audio@ set-default ${device.id}"
+    (label :halign "start" :text {device.label})))
+
+(defwidget audio-output-row [output]
+  (button
+    :class {output.active ? "audio-control active" : output.available ? "audio-control" : "audio-control unavailable"}
+    :halign "start"
+    :sensitive {output.available}
+    :onclick {output.available ? "@audio@ set-monitor ${output.node}" : ""}
+    (label :halign "start" :text {output.label})))
+
+(defwidget audio-popup-content []
+  (popup-frame :kind "audio-popup"
+    (box
+      :class "audio-dashboard"
+      :orientation "vertical"
+      :space-evenly false
+      :spacing @spacingNormal@
+      (popup-title :text "Audio")
+      (popup-section :title {audio_status.sink.description}
+        (box
+          :orientation "horizontal"
+          :space-evenly false
+          :spacing @spacingSmall@
+          (button
+            :class {audio_status.sink.muted ? "audio-control muted" : "audio-control"}
+            :sensitive {audio_status.sink.available}
+            :onclick "@audio@ toggle-sink"
+            (label :text {!audio_status.sink.available ? "" : audio_status.sink.muted ? ""
+              : audio_status.sink.volume == 0 ? "" : audio_status.sink.volume < 20 ? ""
+              : audio_status.sink.volume < 60 ? "" : ""}))
+          (scale
+            :hexpand true
+            :sensitive {audio_status.sink.available}
+            :value {audio_status.sink.volume}
+            :min 0
+            :max 100
+            :round-digits 0
+            :draw-value true
+            :value-pos "right"
+            :onchange "@audio@ set-sink {}"))
+        (button
+          :class "audio-control"
+          :halign "start"
+          :onclick {audio_output_default_expanded ? "@eww@ update audio_output_default_expanded=false" : "@eww@ update audio_output_default_expanded=true"}
+          (label :text {audio_output_default_expanded ? "Default output  " : "Default output  "}))
+        (box
+          :orientation "vertical"
+          :space-evenly false
+          :spacing @spacingSmall@
+          :visible {audio_output_default_expanded}
+          (for device in {audio_status.outputs}
+            (audio-device-row :device device))))
+      (popup-section :title {audio_status.source.description}
+        (box
+          :orientation "horizontal"
+          :space-evenly false
+          :spacing @spacingSmall@
+          (button
+            :class {audio_status.source.muted ? "audio-control muted" : "audio-control"}
+            :sensitive {audio_status.source.available}
+            :onclick "@audio@ toggle-source"
+            (label :text {audio_status.source.muted ? "󰍭" : "󰍬"}))
+          (scale
+            :hexpand true
+            :sensitive {audio_status.source.available}
+            :value {audio_status.source.volume}
+            :min 0
+            :max 100
+            :round-digits 0
+            :draw-value true
+            :value-pos "right"
+            :onchange "@audio@ set-source {}"))
+        (button
+          :class "audio-control"
+          :halign "start"
+          :onclick {audio_input_default_expanded ? "@eww@ update audio_input_default_expanded=false" : "@eww@ update audio_input_default_expanded=true"}
+          (label :text {audio_input_default_expanded ? "Default input  " : "Default input  "}))
+        (box
+          :orientation "vertical"
+          :space-evenly false
+          :spacing @spacingSmall@
+          :visible {audio_input_default_expanded}
+          (for device in {audio_status.inputs}
+            (audio-device-row :device device))))
+      (box
+        :orientation "vertical"
+        :space-evenly false
+        :visible {arraylength(monitor_status.outputs) > 0}
+        (popup-section :title "Monitor output"
+          (box
+            :orientation "vertical"
+            :space-evenly false
+            :spacing @spacingSmall@
+            (for output in {monitor_status.outputs}
+              (audio-output-row :output output))))))))
+
+(defwidget audio-device-menu [devices]
+  (popup-frame :kind "audio-device-menu compact"
+    (box
+      :class "menu-actions"
+      :orientation "vertical"
+      :space-evenly false
+      :spacing @spacingCompact@
+      (label
+        :halign "start"
+        :visible {arraylength(devices) == 0}
+        :text "No devices available")
+      (for device in devices
+        (popup-action :action "@audio@ set-default ${device.id} && @popupToggle@ close-all"
+          (label
+            :xalign 0
+            :limit-width 32
+            :truncate true
+            :tooltip {device.label}
+            :text {device.active ? "✓ ${device.label}" : device.label}))))))
+
+(defwindow audio
+  :monitor 0
+  :geometry (geometry
+    :x "0px"
+    :y "@popupTop@px"
+    :width "@popupWidth@px"
+    :anchor "top right")
+  :stacking "overlay"
+  :exclusive false
+  :focusable "none"
+  :namespace "eww-audio"
+  (audio-popup-content))
+
+(defwindow audio-output
+  :monitor 0
+  :geometry (geometry
+    :x "0px"
+    :y "@popupTop@px"
+    :width "@deviceMenuWidth@px"
+    :anchor "top right")
+  :stacking "overlay"
+  :exclusive false
+  :focusable "none"
+  :namespace "eww-audio-output"
+  (audio-device-menu :devices {audio_status.outputs}))
+
+(defwindow audio-input
+  :monitor 0
+  :geometry (geometry
+    :x "0px"
+    :y "@popupTop@px"
+    :width "@deviceMenuWidth@px"
+    :anchor "top right")
+  :stacking "overlay"
+  :exclusive false
+  :focusable "none"
+  :namespace "eww-audio-input"
+  (audio-device-menu :devices {audio_status.inputs}))
