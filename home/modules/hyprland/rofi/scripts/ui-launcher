@@ -1,0 +1,17 @@
+#!/bin/sh
+set -u
+
+if [ "$#" -eq 1 ] && [ "$1" = --help ]; then
+    printf 'usage: ui-launcher\n'
+    exit 0
+fi
+
+if [ "$#" -ne 0 ]; then
+    printf 'usage: ui-launcher\n' >&2
+    exit 2
+fi
+
+# shellcheck source=/dev/null
+. "$THEMED_ROFI_LIB"
+resolve_rofi_theme launcher "${UI_DESKTOP_THEME:-desktop-theme}" "${UI_MONITOR_TOPOLOGY:-monitor-topology}"
+exec "${UI_ROFI:-rofi}" -show drun -monitor "$ROFI_MONITOR" -theme "$ROFI_THEME"

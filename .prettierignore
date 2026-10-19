@@ -1,0 +1,7 @@
+# QML JavaScript module; the .pragma directive is not valid JS to Prettier.
+home/modules/hyprland/shell/qml/corner.js
+# Nix replaceVars template; Prettier rewrites @name@ placeholders.
+home/modules/hyprland/theme/tokens.scss
+home/modules/hyprland/swaync/style.css
+home/modules/hyprland/swaync/theme.css
+nixos/modules/hyprland-nvidia/greeter/regreet.css

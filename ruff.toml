@@ -1,0 +1,10 @@
+line-length = 88
+target-version = "py311"
+
+[lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[lint.per-file-ignores]
+# Probes that packages import cleanly; unused imports are the point.
+"tests/specs/integration/graphify/graphify-imports.py" = ["F401"]
+"tests/specs/integration/graphify/graphify-home-imports.py" = ["F401"]
