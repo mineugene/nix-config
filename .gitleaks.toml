@@ -1,0 +1,10 @@
+title = "nix-config public secret scanning"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Public GPG signing key ID"
+targetRules = ["generic-api-key"]
+regexTarget = "secret"
+regexes = ['''^0x1D931A5C02F87C2A$''']

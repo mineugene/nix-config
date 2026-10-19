@@ -1,0 +1,129 @@
+diff --git a/data/ui/notification.blp b/data/ui/notification.blp
+index 7c9bc2a..4ff8bf7 100644
+--- a/data/ui/notification.blp
++++ b/data/ui/notification.blp
+@@ -126,6 +126,17 @@ template $SwayNotificationCenterNotification: Adw.Bin {
+                       "body",
+                     ]
+                   }
++
++                  Label app_name {
++                    ellipsize: end;
++                    justify: left;
++                    xalign: 0;
++                    hexpand: true;
++
++                    styles [
++                      "app-name",
++                    ]
++                  }
+                 }
+               }
+ 
+diff --git a/src/constants.vala.in b/src/constants.vala.in
+index ef41c8f..8fe6842 100644
+--- a/src/constants.vala.in
++++ b/src/constants.vala.in
+@@ -1,5 +1,5 @@
+ public class Constants {
+     public const string VERSION = @VERSION@;
+     public const string VERSIONNUM = @VERSION_NUM@;
+-    public const uint ANIMATION_DURATION = 400;
++    public const uint ANIMATION_DURATION = 200;
+ }
+diff --git a/src/notification/notification.vala b/src/notification/notification.vala
+index 923ec6a..21cd6a7 100644
+--- a/src/notification/notification.vala
++++ b/src/notification/notification.vala
+@@ -35,6 +35,8 @@ namespace SwayNotificationCenter {
+         unowned Gtk.Label summary;
+         [GtkChild]
+         unowned Gtk.Label time;
++        [GtkChild]
++        unowned Gtk.Label app_name;
+         [GtkChild]
+         unowned Gtk.Label body;
+         [GtkChild]
+@@ -268,6 +270,9 @@ namespace SwayNotificationCenter {
+             this.summary.set_text (param.summary ?? param.app_name);
+             this.summary.set_ellipsize (Pango.EllipsizeMode.END);
+ 
++            this.app_name.set_text (param.display_name);
++            this.app_name.set_visible (param.name_id.length > 0);
++
+             close_button.set_transition_duration (this.transition_time);
+ 
+             this.revealer.set_transition_duration (this.transition_time);
+diff --git a/src/notificationWindow/notificationWindow.vala b/src/notificationWindow/notificationWindow.vala
+index 87c81d9..7509207 100644
+--- a/src/notificationWindow/notificationWindow.vala
++++ b/src/notificationWindow/notificationWindow.vala
+@@ -44,6 +44,7 @@ namespace SwayNotificationCenter {
+                            Functions.monitor_to_string (monitor));
+ 
+                     // Only set ON_DEMAND after the surface has been mapped
++                    set_responsive_width (monitor);
+                     Idle.add_once (() => set_keyboard_mode ());
+                 });
+             });
+@@ -55,8 +56,11 @@ namespace SwayNotificationCenter {
+             // TODO: Make option
+             list.use_card_animation = true;
+ 
+-            // set_resizable (false);
+-            default_width = ConfigModel.instance.notification_window_width;
++            int minimum_width = ConfigModel.instance.notification_window_width;
++            default_width = minimum_width;
++            scrolled_window.set_min_content_width (minimum_width);
++            scrolled_window.set_max_content_width (minimum_width);
++            scrolled_window.set_propagate_natural_width (true);
+ 
+             // Change output on config reload
+             app.config_reload.connect ((old, config) => {
+@@ -105,6 +109,20 @@ namespace SwayNotificationCenter {
+             }
+         }
+ 
++        private void set_responsive_width (Gdk.Monitor monitor) {
++            int available_width = int.max (1, monitor.geometry.width - 12);
++            int minimum_width = int.min (
++                ConfigModel.instance.notification_window_width,
++                available_width
++            );
++            int maximum_width = int.min (
++                available_width,
++                int.max (minimum_width, (int) (monitor.geometry.width * 0.4))
++            );
++            scrolled_window.set_min_content_width (minimum_width);
++            scrolled_window.set_max_content_width (maximum_width);
++        }
++
+         private void set_anchor () {
+             debug ("NotificationWindow set_anchor");
+             if (app.use_layer_shell) {
+@@ -153,23 +171,10 @@ namespace SwayNotificationCenter {
+                 set_monitor (Functions.try_get_monitor (monitor_name));
+             }
+ 
+-            list.animation_add_reveal_type = AnimatedListItem.RevealAnimationType.SLIDE;
++            list.animation_add_reveal_type = AnimatedListItem.RevealAnimationType.SLIDE_WITH;
+             list.animation_remove_reveal_type = AnimatedListItem.RevealAnimationType.SLIDE;
+             list.animation_remove_child_type = AnimatedListItem.ChildAnimationType.NONE;
+-            switch (ConfigModel.instance.positionX) {
+-                case PositionX.LEFT:
+-                    list.animation_add_child_type =
+-                        AnimatedListItem.ChildAnimationType.SLIDE_FROM_LEFT;
+-                    break;
+-                case PositionX.CENTER:
+-                    list.animation_add_child_type = AnimatedListItem.ChildAnimationType.NONE;
+-                    break;
+-                default:
+-                case PositionX.RIGHT:
+-                    list.animation_add_child_type =
+-                        AnimatedListItem.ChildAnimationType.SLIDE_FROM_RIGHT;
+-                    break;
+-            }
++            list.animation_add_child_type = AnimatedListItem.ChildAnimationType.NONE;
+             switch (ConfigModel.instance.positionY) {
+                 default:
+                 case SwayNotificationCenter.PositionY.TOP:
