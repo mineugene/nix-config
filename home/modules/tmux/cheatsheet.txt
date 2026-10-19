@@ -1,0 +1,40 @@
+tmux cheat sheet - prefix C-s
+------------------------------------------------------------
+
+WINDOWS
+  c          new window (cwd)
+  n / p      next / previous window
+  Tab        last (previously active) window
+  N / P      swap window back / forward
+  1 .. 9  0  select window 1 .. 10
+  ,          rename window
+  $          rename session
+  Q          kill session
+
+PANES
+  s / v      split down / right (cwd)
+  S / V      split full-height / full-width
+  h j k l    focus pane left / down / up / right
+  o / O      cycle pane forward / back
+  { / }      swap pane up / down
+  < > - +    resize pane 5 cells
+  z          zoom pane
+  x          kill pane
+
+COPY MODE (vi)
+  C-v          enter copy-mode
+  v / V        begin selection / select line
+  C-v          rectangle toggle (once in copy-mode)
+  y / Y        yank selection / to end of line
+  /  ?         search forward / backward
+  C-y          paste buffer
+  b            choose buffer
+
+SESSION / MISC
+  t          session switcher (fzf popup)
+  a          jump to next active session
+  d          detach
+  r          reload config
+  :          command prompt
+  ?          this cheat sheet
+  q          close popup

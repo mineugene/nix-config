@@ -1,0 +1,3 @@
+@import "@mode@.rasi"
+@import "base.rasi"
+@import "@variant@.rasi"
