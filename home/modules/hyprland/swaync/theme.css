@@ -1,0 +1,14 @@
+:root {
+    --background: @background@;
+    --notification-background: @surfaceTranslucent@;
+    --control-center-background: @surfaceTranslucent@;
+    --surface: @surface@;
+    --surface-alt: @surfaceAlt@;
+    --surface-hover: @surfaceHover@;
+    --foreground: @foreground@;
+    --muted: @muted@;
+    --accent: @accent@;
+    --warning: @yellow@;
+    --critical: @red@;
+    --notification-border: @borderTranslucent@;
+}

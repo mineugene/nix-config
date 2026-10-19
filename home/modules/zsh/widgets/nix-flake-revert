@@ -1,0 +1,27 @@
+local nix_config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/nix"
+
+if [[ ! -d "$nix_config_dir/.git" ]]; then
+    zle -M "Error: $nix_config_dir is not a git repository"
+    return 1
+fi
+
+local selected
+selected=$(
+    git -C "$nix_config_dir" log \
+        --format='%h %ad %s' --date=short -- flake.lock |
+    FZF_DEFAULT_OPTS="$FZF_DEFAULT_OPTS --no-multi \
+        --header 'Select a flake.lock revision to revert to (CTRL-/ to toggle preview)' \
+        --color header:italic \
+        --preview 'git -C \"$nix_config_dir\" diff {1}..HEAD -- flake.lock' \
+        --preview-window 'right:60%:wrap' \
+        --bind 'ctrl-/:toggle-preview'" \
+    fzf
+)
+
+if [[ -n "$selected" ]]; then
+    local hash="${selected%% *}"
+    LBUFFER="git -C ${(q)nix_config_dir} checkout $hash -- flake.lock"
+    RBUFFER=""
+fi
+
+zle reset-prompt

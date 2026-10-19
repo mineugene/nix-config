@@ -1,0 +1,161 @@
+--- a/crates/eww/src/display_backend.rs
++++ b/crates/eww/src/display_backend.rs
+@@ -1,4 +1,7 @@
+-use crate::{widgets::window::Window, window_initiator::WindowInitiator};
++use crate::{
++    widgets::window::{new_window, Window},
++    window_initiator::WindowInitiator,
++};
+ 
+ use gtk::gdk;
+ 
+@@ -22,14 +25,17 @@
+     const IS_WAYLAND: bool = false;
+ 
+     fn initialize_window(_window_init: &WindowInitiator, _monitor: gdk::Rectangle, x: i32, y: i32) -> Option<Window> {
+-        Some(Window::new(gtk::WindowType::Toplevel, x, y))
++        Some(new_window(gtk::WindowType::Toplevel, x, y))
+     }
+ }
+ 
+ #[cfg(feature = "wayland")]
+ mod platform_wayland {
+     use super::DisplayBackend;
+-    use crate::{widgets::window::Window, window_initiator::WindowInitiator};
++    use crate::{
++        widgets::window::{new_window, Window},
++        window_initiator::WindowInitiator,
++    };
+     use gtk::gdk;
+     use gtk::prelude::*;
+     use gtk_layer_shell::{KeyboardMode, LayerShell};
+@@ -43,7 +49,7 @@
+         const IS_WAYLAND: bool = true;
+ 
+         fn initialize_window(window_init: &WindowInitiator, monitor: gdk::Rectangle, x: i32, y: i32) -> Option<Window> {
+-            let window = Window::new(gtk::WindowType::Toplevel, x, y);
++            let window = new_window(gtk::WindowType::Toplevel, x, y);
+             // Initialising a layer shell surface
+             window.init_layer_shell();
+             // Sets the monitor where the surface is shown
+@@ -130,7 +136,10 @@
+ 
+ #[cfg(feature = "x11")]
+ mod platform_x11 {
+-    use crate::{widgets::window::Window, window_initiator::WindowInitiator};
++    use crate::{
++        widgets::window::{new_window, Window},
++        window_initiator::WindowInitiator,
++    };
+     use anyhow::{Context, Result};
+     use gdk::Monitor;
+     use gtk::gdk;
+@@ -158,7 +167,7 @@
+         fn initialize_window(window_init: &WindowInitiator, _monitor: gdk::Rectangle, x: i32, y: i32) -> Option<Window> {
+             let window_type =
+                 if window_init.backend_options.x11.wm_ignore { gtk::WindowType::Popup } else { gtk::WindowType::Toplevel };
+-            let window = Window::new(window_type, x, y);
++            let window = new_window(window_type, x, y);
+             window.set_resizable(window_init.resizable);
+             window.set_keep_above(window_init.stacking == WindowStacking::Foreground);
+             window.set_keep_below(window_init.stacking == WindowStacking::Background);
+--- a/crates/eww/src/widgets/systray.rs
++++ b/crates/eww/src/widgets/systray.rs
+@@ -1,4 +1,4 @@
+-use crate::widgets::window::Window;
++use crate::widgets::window::{window_position, Window};
+ use futures::StreamExt;
+ use gtk::{
+     cairo::Surface,
+@@ -199,7 +199,8 @@
+             widget.toplevel().expect("Failed to obtain toplevel window").downcast::<Window>().expect("Failed to downcast window");
+         widget.add_events(gdk::EventMask::BUTTON_PRESS_MASK);
+         widget.connect_button_press_event(glib::clone!(@strong item => move |_, evt| {
+-            let (x, y) = (evt.root().0 as i32 + window.x(), evt.root().1 as i32 + window.y());
++            let (window_x, window_y) = window_position(&window);
++            let (x, y) = (evt.root().0 as i32 + window_x, evt.root().1 as i32 + window_y);
+             let item_is_menu = run_async_task(async { item.sni.item_is_menu().await });
+             let have_item_is_menu = item_is_menu.is_ok();
+             let item_is_menu = item_is_menu.unwrap_or(false);
+--- a/crates/eww/src/widgets/window.rs
++++ b/crates/eww/src/widgets/window.rs
+@@ -1,63 +1,20 @@
+-use gtk::glib::{self, object_subclass, wrapper, Properties};
+-use gtk::{prelude::*, subclass::prelude::*};
+-use std::cell::RefCell;
++use gtk::prelude::*;
+ 
+-wrapper! {
+-    pub struct Window(ObjectSubclass<WindowPriv>)
+-    @extends gtk::Window, gtk::Bin, gtk::Container, gtk::Widget, @implements gtk::Buildable;
++const POSITION_DATA: &str = "eww-window-position";
++
++// GTK3 stops invalidating descendant CSS after runtime class changes under a
++// custom GtkWindow subclass. Keep a plain window and attach Eww's position
++// metadata as private object data instead.
++pub type Window = gtk::Window;
++
++pub fn new_window(type_: gtk::WindowType, x: i32, y: i32) -> Window {
++    let window = gtk::Window::new(type_);
++    // The private key and value type are used only through this module.
++    unsafe { window.set_data(POSITION_DATA, (x, y)) };
++    window
+ }
+ 
+-#[derive(Properties)]
+-#[properties(wrapper_type = Window)]
+-pub struct WindowPriv {
+-    #[property(get, name = "x", nick = "X", blurb = "Global x coordinate", default = 0)]
+-    x: RefCell<i32>,
+-
+-    #[property(get, name = "y", nick = "Y", blurb = "Global y coordinate", default = 0)]
+-    y: RefCell<i32>,
++pub fn window_position(window: &Window) -> (i32, i32) {
++    // `new_window` always stores this exact type under the private key.
++    unsafe { window.data::<(i32, i32)>(POSITION_DATA).map(|position| *position.as_ptr()).unwrap_or_default() }
+ }
+-
+-// This should match the default values from the ParamSpecs
+-impl Default for WindowPriv {
+-    fn default() -> Self {
+-        WindowPriv { x: RefCell::new(0), y: RefCell::new(0) }
+-    }
+-}
+-
+-#[object_subclass]
+-impl ObjectSubclass for WindowPriv {
+-    type ParentType = gtk::Window;
+-    type Type = Window;
+-
+-    const NAME: &'static str = "WindowEww";
+-}
+-
+-impl Default for Window {
+-    fn default() -> Self {
+-        glib::Object::new::<Self>()
+-    }
+-}
+-
+-impl Window {
+-    pub fn new(type_: gtk::WindowType, x_: i32, y_: i32) -> Self {
+-        let w: Self = glib::Object::builder().property("type", type_).build();
+-        let priv_ = w.imp();
+-        priv_.x.replace(x_);
+-        priv_.y.replace(y_);
+-        w
+-    }
+-}
+-
+-impl ObjectImpl for WindowPriv {
+-    fn properties() -> &'static [glib::ParamSpec] {
+-        Self::derived_properties()
+-    }
+-
+-    fn property(&self, id: usize, pspec: &glib::ParamSpec) -> glib::Value {
+-        self.derived_property(id, pspec)
+-    }
+-}
+-impl WindowImpl for WindowPriv {}
+-impl BinImpl for WindowPriv {}
+-impl ContainerImpl for WindowPriv {}
+-impl WidgetImpl for WindowPriv {}

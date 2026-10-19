@@ -1,0 +1,48 @@
+#!/bin/sh
+set -u
+
+case $# in
+    1) affirmative=Yes ;;
+    2) affirmative=$2 ;;
+    *)
+        printf 'usage: ui-confirm MESSAGE [AFFIRMATIVE]\n' >&2
+        exit 2
+        ;;
+esac
+
+newline='
+'
+carriage_return='
+'
+case $affirmative in
+    "" | *"$newline"* | *"$carriage_return"*)
+        printf 'ui-confirm: AFFIRMATIVE must be one non-empty line\n' >&2
+        exit 2
+        ;;
+esac
+
+config_home=${XDG_CONFIG_HOME:-${HOME:?HOME must be set}/.config}
+desktop_theme=${UI_DESKTOP_THEME:-desktop-theme}
+rofi=${UI_ROFI:-rofi}
+mode=$("$desktop_theme" get)
+# "No" is listed first and carries the initial selection, so a reflexive
+# Enter cancels instead of confirming. Rofi selects and accepts on separate
+# clicks by default; accepting on the primary button makes it one click.
+if ! choice=$(printf 'No\n%s\n' "$affirmative" |
+    "$rofi" \
+        -dmenu \
+        -p Confirm \
+        -mesg "$1" \
+        -monitor -1 \
+        -theme "$config_home/rofi/themes/confirm-$mode.rasi" \
+        -no-custom \
+        -kb-cancel Escape \
+        -hover-select \
+        -me-select-entry '' \
+        -me-accept-entry MousePrimary \
+        -format i \
+        -selected-row 0); then
+    exit 1
+fi
+
+[ "$choice" = 1 ]
